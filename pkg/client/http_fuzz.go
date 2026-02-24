@@ -33,8 +33,8 @@ func FuzzClientGet(f *testing.F) {
 
 		// Parse headers from byte input
 		headerMap := make(map[string]string)
-		headerParts := strings.Split(string(headers), "\n")
-		for _, part := range headerParts {
+		headerParts := strings.SplitSeq(string(headers), "\n")
+		for part := range headerParts {
 			if idx := strings.Index(part, ":"); idx > 0 {
 				key := strings.TrimSpace(part[:idx])
 				value := strings.TrimSpace(part[idx+1:])
@@ -63,8 +63,8 @@ func FuzzClientPost(f *testing.F) {
 
 		// Parse headers from byte input
 		headerMap := make(map[string]string)
-		headerParts := strings.Split(string(headers), "\n")
-		for _, part := range headerParts {
+		headerParts := strings.SplitSeq(string(headers), "\n")
+		for part := range headerParts {
 			if idx := strings.Index(part, ":"); idx > 0 {
 				key := strings.TrimSpace(part[:idx])
 				value := strings.TrimSpace(part[idx+1:])
@@ -75,7 +75,7 @@ func FuzzClientPost(f *testing.F) {
 		}
 
 		// Create a simple body interface from the byte input
-		var bodyInterface interface{}
+		var bodyInterface any
 		if len(body) > 0 {
 			bodyInterface = string(body)
 		}
@@ -99,8 +99,8 @@ func FuzzClientPut(f *testing.F) {
 
 		// Parse headers from byte input
 		headerMap := make(map[string]string)
-		headerParts := strings.Split(string(headers), "\n")
-		for _, part := range headerParts {
+		headerParts := strings.SplitSeq(string(headers), "\n")
+		for part := range headerParts {
 			if idx := strings.Index(part, ":"); idx > 0 {
 				key := strings.TrimSpace(part[:idx])
 				value := strings.TrimSpace(part[idx+1:])
@@ -111,7 +111,7 @@ func FuzzClientPut(f *testing.F) {
 		}
 
 		// Create a simple body interface from the byte input
-		var bodyInterface interface{}
+		var bodyInterface any
 		if len(body) > 0 {
 			bodyInterface = string(body)
 		}
@@ -135,8 +135,8 @@ func FuzzClientDelete(f *testing.F) {
 
 		// Parse headers from byte input
 		headerMap := make(map[string]string)
-		headerParts := strings.Split(string(headers), "\n")
-		for _, part := range headerParts {
+		headerParts := strings.SplitSeq(string(headers), "\n")
+		for part := range headerParts {
 			if idx := strings.Index(part, ":"); idx > 0 {
 				key := strings.TrimSpace(part[:idx])
 				value := strings.TrimSpace(part[idx+1:])
@@ -165,7 +165,7 @@ func FuzzDecodeJSON(f *testing.F) {
 		// Create a mock response with the fuzz data as body
 		// Note: We can't easily create a real http.Response in fuzz tests
 		// so we'll just test that the function doesn't panic on various inputs
-		var result interface{}
+		var result any
 		_ = client.DecodeJSON(nil, &result)
 	})
 }

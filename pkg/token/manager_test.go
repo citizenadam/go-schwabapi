@@ -262,7 +262,7 @@ func TestManager_ConcurrentAccess(t *testing.T) {
 
 	// Test concurrent reads
 	done := make(chan bool)
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		go func() {
 			_ = manager.GetAccessToken()
 			_ = manager.GetRefreshToken()
@@ -272,7 +272,7 @@ func TestManager_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		<-done
 	}
 }
@@ -292,7 +292,7 @@ func TestManager_UpdateTokens_Concurrent(t *testing.T) {
 	done := make(chan bool)
 
 	// Test concurrent updates
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		go func() {
 			_, _ = manager.UpdateTokens(ctx, true, false)
 			done <- true
@@ -300,7 +300,7 @@ func TestManager_UpdateTokens_Concurrent(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		<-done
 	}
 }

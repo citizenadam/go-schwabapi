@@ -16,10 +16,10 @@ type SubscriptionParams struct {
 
 // Message represents a stream message from the Schwab API
 type Message struct {
-	Service   string                 `json:"service,omitempty"`
-	Command   string                 `json:"command,omitempty"`
-	RequestID int                    `json:"requestid,omitempty"`
-	Content   map[string]interface{} `json:"content,omitempty"`
+	Service   string         `json:"service,omitempty"`
+	Command   string         `json:"command,omitempty"`
+	RequestID int            `json:"requestid,omitempty"`
+	Content   map[string]any `json:"content,omitempty"`
 }
 
 // StreamRequest represents a stream request wrapper

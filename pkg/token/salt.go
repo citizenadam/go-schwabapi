@@ -1,4 +1,4 @@
-package salt
+package token
 
 import (
 	"crypto/aes"

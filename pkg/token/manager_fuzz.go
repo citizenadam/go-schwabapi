@@ -242,7 +242,7 @@ func FuzzManagerConcurrentAccess(f *testing.F) {
 		}()
 
 		// Wait for all goroutines to complete
-		for i := 0; i < 4; i++ {
+		for range 4 {
 			<-done
 		}
 	})

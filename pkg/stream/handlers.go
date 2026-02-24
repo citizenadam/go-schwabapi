@@ -112,7 +112,7 @@ func (h *Handler) handleAdd(ctx context.Context, msg *types.Message) error {
 	// Server responds with subscription confirmation
 
 	if msg.Content != nil {
-		if response, ok := msg.Content["response"].(map[string]interface{}); ok {
+		if response, ok := msg.Content["response"].(map[string]any); ok {
 			if code, ok := response["code"].(float64); ok {
 				if code == 0 {
 					logger.InfoCtx(ctx, h.logger, "ADD subscription successful")
@@ -137,7 +137,7 @@ func (h *Handler) handleSubs(ctx context.Context, msg *types.Message) error {
 	// Server responds with subscription confirmation
 
 	if msg.Content != nil {
-		if response, ok := msg.Content["response"].(map[string]interface{}); ok {
+		if response, ok := msg.Content["response"].(map[string]any); ok {
 			if code, ok := response["code"].(float64); ok {
 				if code == 0 {
 					logger.InfoCtx(ctx, h.logger, "SUBS subscription successful")
@@ -162,7 +162,7 @@ func (h *Handler) handleUnsubs(ctx context.Context, msg *types.Message) error {
 	// Server responds with unsubscription confirmation
 
 	if msg.Content != nil {
-		if response, ok := msg.Content["response"].(map[string]interface{}); ok {
+		if response, ok := msg.Content["response"].(map[string]any); ok {
 			if code, ok := response["code"].(float64); ok {
 				if code == 0 {
 					logger.InfoCtx(ctx, h.logger, "UNSUBS subscription successful")
@@ -187,7 +187,7 @@ func (h *Handler) handleView(ctx context.Context, msg *types.Message) error {
 	// Server responds with update confirmation
 
 	if msg.Content != nil {
-		if response, ok := msg.Content["response"].(map[string]interface{}); ok {
+		if response, ok := msg.Content["response"].(map[string]any); ok {
 			if code, ok := response["code"].(float64); ok {
 				if code == 0 {
 					logger.InfoCtx(ctx, h.logger, "VIEW subscription successful")

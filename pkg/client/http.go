@@ -79,7 +79,7 @@ func (c *Client) Get(ctx context.Context, url string, headers map[string]string)
 }
 
 // Post performs an HTTP POST request with context and JSON body
-func (c *Client) Post(ctx context.Context, url string, headers map[string]string, body interface{}) (*http.Response, error) {
+func (c *Client) Post(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		c.logger.Error("failed to marshal request body",
@@ -116,7 +116,7 @@ func (c *Client) Post(ctx context.Context, url string, headers map[string]string
 }
 
 // Put performs an HTTP PUT request with context and JSON body
-func (c *Client) Put(ctx context.Context, url string, headers map[string]string, body interface{}) (*http.Response, error) {
+func (c *Client) Put(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		c.logger.Error("failed to marshal request body",
@@ -180,7 +180,7 @@ func (c *Client) Delete(ctx context.Context, url string, headers map[string]stri
 }
 
 // DecodeJSON decodes the response body into the provided interface
-func (c *Client) DecodeJSON(resp *http.Response, v interface{}) error {
+func (c *Client) DecodeJSON(resp *http.Response, v any) error {
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)

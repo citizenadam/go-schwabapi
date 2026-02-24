@@ -154,7 +154,7 @@ func TestManager_ConcurrentAccess(t *testing.T) {
 	done := make(chan bool)
 
 	// Concurrent writes
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		go func(i int) {
 			req := &types.Subscription{
 				Command: "ADD",
@@ -170,7 +170,7 @@ func TestManager_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Concurrent reads
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		go func() {
 			_ = manager.GetSubscriptions()
 			done <- true
@@ -178,7 +178,7 @@ func TestManager_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		<-done
 	}
 }

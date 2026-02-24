@@ -124,7 +124,7 @@ func TestClient_Post_Success(t *testing.T) {
 		name           string
 		url            string
 		headers        map[string]string
-		body           interface{}
+		body           any
 		expectedStatus int
 		expectedBody   string
 	}{
@@ -179,7 +179,7 @@ func TestClient_Post_Error(t *testing.T) {
 	tests := []struct {
 		name        string
 		url         string
-		body        interface{}
+		body        any
 		expectError bool
 		errorMsg    string
 	}{
@@ -221,7 +221,7 @@ func TestClient_Put_Success(t *testing.T) {
 		name           string
 		url            string
 		headers        map[string]string
-		body           interface{}
+		body           any
 		expectedStatus int
 		expectedBody   string
 	}{
@@ -268,7 +268,7 @@ func TestClient_Put_Error(t *testing.T) {
 	tests := []struct {
 		name        string
 		url         string
-		body        interface{}
+		body        any
 		expectError bool
 		errorMsg    string
 	}{
@@ -379,12 +379,12 @@ func TestClient_DecodeJSON_Success(t *testing.T) {
 	tests := []struct {
 		name     string
 		response string
-		target   interface{}
+		target   any
 	}{
 		{
 			name:     "decode JSON object",
 			response: `{"message":"success","value":42}`,
-			target:   &map[string]interface{}{},
+			target:   &map[string]any{},
 		},
 		{
 			name:     "decode JSON array",
@@ -423,14 +423,14 @@ func TestClient_DecodeJSON_Error(t *testing.T) {
 	tests := []struct {
 		name        string
 		response    string
-		target      interface{}
+		target      any
 		expectError bool
 		errorMsg    string
 	}{
 		{
 			name:        "invalid JSON",
 			response:    `{invalid json}`,
-			target:      &map[string]interface{}{},
+			target:      &map[string]any{},
 			expectError: true,
 			errorMsg:    "failed to unmarshal response",
 		},

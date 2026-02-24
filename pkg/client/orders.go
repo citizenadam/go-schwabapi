@@ -24,7 +24,7 @@ func NewOrdersClient(httpClient *Client, logger *slog.Logger) *OrdersClient {
 
 // PlaceOrder places an order for a specific account
 // POST /v1/accounts/{accountHash}/orders
-func (o *OrdersClient) PlaceOrder(ctx context.Context, accountHash string, order interface{}) (*http.Response, error) {
+func (o *OrdersClient) PlaceOrder(ctx context.Context, accountHash string, order any) (*http.Response, error) {
 	// Add deadline to prevent indefinite blocking
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -94,7 +94,7 @@ func (o *OrdersClient) CancelOrder(ctx context.Context, accountHash string, orde
 
 // ReplaceOrder replaces an existing order for an account
 // PUT /v1/accounts/{accountHash}/orders/{orderId}
-func (o *OrdersClient) ReplaceOrder(ctx context.Context, accountHash string, orderId string, order interface{}) (*http.Response, error) {
+func (o *OrdersClient) ReplaceOrder(ctx context.Context, accountHash string, orderId string, order any) (*http.Response, error) {
 	// Add deadline to prevent indefinite blocking
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
