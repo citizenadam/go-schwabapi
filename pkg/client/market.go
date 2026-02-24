@@ -1,0 +1,318 @@
+package client
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net/url"
+	"strings"
+	"time"
+
+	"github.com/citizenadam/go-schwabapi/pkg/types"
+)
+
+// Market handles market data API endpoints
+type Market struct {
+	httpClient  *Client
+	logger      *slog.Logger
+	tokenGetter TokenGetter
+}
+
+// NewMarket creates a new Market client
+func NewMarket(httpClient *Client, logger *slog.Logger, tokenGetter TokenGetter) *Market {
+	return &Market{
+		httpClient:  httpClient,
+		logger:      logger,
+		tokenGetter: tokenGetter,
+	}
+}
+
+// Quotes retrieves quotes for a list of symbols
+// Endpoint: GET /marketdata/v1/quotes
+func (m *Market) Quotes(ctx context.Context, symbols []string, fields string, indicative bool) (*types.QuotesResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/quotes", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("symbols", strings.Join(symbols, ","))
+	if fields != "" {
+		params.Add("fields", fields)
+	}
+	if indicative {
+		params.Add("indicative", "true")
+	}
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get quotes",
+			"url", apiURL,
+			"symbols", symbols,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get quotes: %w", err)
+	}
+
+	var result types.QuotesResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode quotes response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved quotes",
+		"count", len(result.Quotes),
+	)
+
+	return &result, nil
+}
+
+// Quote retrieves a quote for a single symbol
+// Endpoint: GET /marketdata/v1/{symbol}/quotes
+func (m *Market) Quote(ctx context.Context, symbol string, fields string) (*types.QuoteResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/%s/quotes", baseAPIURL, url.PathEscape(symbol))
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	if fields != "" {
+		params.Add("fields", fields)
+	}
+
+	// Append query string to URL if we have parameters
+	if len(params) > 0 {
+		apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+	}
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get quote",
+			"url", apiURL,
+			"symbol", symbol,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get quote: %w", err)
+	}
+
+	var result types.QuoteResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode quote response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved quote",
+		"symbol", symbol,
+	)
+
+	return &result, nil
+}
+
+// OptionChainsRequest represents parameters for option chains request
+type OptionChainsRequest struct {
+	Symbol                 string
+	ContractType           string
+	StrikeCount            int
+	IncludeUnderlyingQuote bool
+	Strategy               string
+	Interval               string
+	Strike                 float64
+	Range                  string
+	FromDate               string
+	ToDate                 string
+	Volatility             float64
+	UnderlyingPrice        float64
+	InterestRate           float64
+	DaysToExpiration       int
+	ExpMonth               string
+	OptionType             string
+	Entitlement            string
+}
+
+// OptionChains retrieves option chains for a symbol
+// Endpoint: GET /marketdata/v1/chains
+func (m *Market) OptionChains(ctx context.Context, req *OptionChainsRequest) (*types.OptionChainsResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/chains", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("symbol", req.Symbol)
+	if req.ContractType != "" {
+		params.Add("contractType", req.ContractType)
+	}
+	if req.StrikeCount > 0 {
+		params.Add("strikeCount", fmt.Sprintf("%d", req.StrikeCount))
+	}
+	if req.IncludeUnderlyingQuote {
+		params.Add("includeUnderlyingQuote", "true")
+	}
+	if req.Strategy != "" {
+		params.Add("strategy", req.Strategy)
+	}
+	if req.Interval != "" {
+		params.Add("interval", req.Interval)
+	}
+	if req.Strike > 0 {
+		params.Add("strike", fmt.Sprintf("%f", req.Strike))
+	}
+	if req.Range != "" {
+		params.Add("range", req.Range)
+	}
+	if req.FromDate != "" {
+		params.Add("fromDate", req.FromDate)
+	}
+	if req.ToDate != "" {
+		params.Add("toDate", req.ToDate)
+	}
+	if req.Volatility > 0 {
+		params.Add("volatility", fmt.Sprintf("%f", req.Volatility))
+	}
+	if req.UnderlyingPrice > 0 {
+		params.Add("underlyingPrice", fmt.Sprintf("%f", req.UnderlyingPrice))
+	}
+	if req.InterestRate > 0 {
+		params.Add("interestRate", fmt.Sprintf("%f", req.InterestRate))
+	}
+	if req.DaysToExpiration > 0 {
+		params.Add("daysToExpiration", fmt.Sprintf("%d", req.DaysToExpiration))
+	}
+	if req.ExpMonth != "" {
+		params.Add("expMonth", req.ExpMonth)
+	}
+	if req.OptionType != "" {
+		params.Add("optionType", req.OptionType)
+	}
+	if req.Entitlement != "" {
+		params.Add("entitlement", req.Entitlement)
+	}
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get option chains",
+			"url", apiURL,
+			"symbol", req.Symbol,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get option chains: %w", err)
+	}
+
+	var result types.OptionChainsResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode option chains response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved option chains",
+		"symbol", req.Symbol,
+		"numberOfContracts", result.NumberOfContracts,
+	)
+
+	return &result, nil
+}
+
+// PriceHistoryRequest represents parameters for price history request
+type PriceHistoryRequest struct {
+	Symbol                string
+	PeriodType            string
+	Period                string
+	FrequencyType         string
+	Frequency             string
+	StartDate             string
+	EndDate               string
+	NeedExtendedHoursData bool
+	NeedPreviousClose     bool
+}
+
+// PriceHistory retrieves price history for a symbol
+// Endpoint: GET /marketdata/v1/pricehistory
+func (m *Market) PriceHistory(ctx context.Context, req *PriceHistoryRequest) (*types.PriceHistoryResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/pricehistory", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("symbol", req.Symbol)
+	if req.PeriodType != "" {
+		params.Add("periodType", req.PeriodType)
+	}
+	if req.Period != "" {
+		params.Add("period", req.Period)
+	}
+	if req.FrequencyType != "" {
+		params.Add("frequencyType", req.FrequencyType)
+	}
+	if req.Frequency != "" {
+		params.Add("frequency", req.Frequency)
+	}
+	if req.StartDate != "" {
+		params.Add("startDate", req.StartDate)
+	}
+	if req.EndDate != "" {
+		params.Add("endDate", req.EndDate)
+	}
+	if req.NeedExtendedHoursData {
+		params.Add("needExtendedHoursData", "true")
+	}
+	if req.NeedPreviousClose {
+		params.Add("needPreviousClose", "true")
+	}
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get price history",
+			"url", apiURL,
+			"symbol", req.Symbol,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get price history: %w", err)
+	}
+
+	var result types.PriceHistoryResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode price history response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved price history",
+		"symbol", req.Symbol,
+		"candlesCount", len(result.Candles),
+	)
+
+	return &result, nil
+}
