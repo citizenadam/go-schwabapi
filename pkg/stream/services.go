@@ -136,3 +136,81 @@ func (c *Client) LevelOneForex(ctx context.Context, manager *Manager, keys strin
 
 	return c.Write(data)
 }
+
+// NyseBook subscribes to NYSE book data
+func (c *Client) NyseBook(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "NYSE_BOOK",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
+
+// NasdaqBook subscribes to NASDAQ book data
+func (c *Client) NasdaqBook(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "NASDAQ_BOOK",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
+
+// OptionsBook subscribes to options book data
+func (c *Client) OptionsBook(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "OPTIONS_BOOK",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
