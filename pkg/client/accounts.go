@@ -153,6 +153,39 @@ func (a *Accounts) AccountDetailsAll(ctx context.Context, fields string) (*types
 	return &result, nil
 }
 
+// Preferences retrieves user preferences including streamer information
+// Endpoint: GET /trader/v1/userPreference
+func (a *Accounts) Preferences(ctx context.Context) (*types.PreferencesResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/userPreference", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	resp, err := a.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		a.logger.Error("failed to get user preferences",
+			"url", apiURL,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get user preferences: %w", err)
+	}
+
+	var result types.PreferencesResponse
+	if err := a.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode preferences response: %w", err)
+	}
+
+	a.logger.Info("successfully retrieved user preferences")
+
+	return &result, nil
+}
+
 // AccountOrders retrieves all orders for a specific account
 // Orders retrieved can be filtered based on input parameters. Maximum date range is 1 year.
 // Endpoint: GET /trader/v1/accounts/{accountHash}/orders

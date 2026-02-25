@@ -186,3 +186,55 @@ The StreamerInfo struct contains:
 - Task 7 depends on Task 1 (AccountDetailsAllResponse type) - COMPLETED
 - Task 7 depends on Task 5 (Token auto-refresh) - COMPLETED
 - Task 7 will be tested in Task 10 (Account method tests)
+
+# Learnings - Task 8: Preferences REST Method
+
+## Implementation Details
+
+### Method Implemented
+- **Preferences(ctx)** - Added to Accounts struct in pkg/client/accounts.go
+- Endpoint: GET /trader/v1/userPreference (NOT plural)
+- Returns: *types.PreferencesResponse containing user preferences including streamerInfo
+
+### Key Patterns
+- Follows existing AccountDetails() pattern from pkg/client/accounts.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Logs success/error with slog.Logger
+- Returns PreferencesResponse which contains StreamerInfo field
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URL: `/trader/v1/userPreference` (singular, NOT plural)
+3. Set Authorization header with Bearer token
+4. Made GET request via a.httpClient.Get()
+5. Decoded JSON response into PreferencesResponse
+6. Logged success
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task (tests will be added in Task 12)
+- Build succeeds: `go build ./pkg/client`
+- No vet warnings: `go vet ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **Endpoint is singular**: The endpoint is `/trader/v1/userPreference` (NOT `/trader/v1/userPreferences`)
+2. **StreamerInfo access**: The PreferencesResponse type already has StreamerInfo as a field, so no array access [0] is needed in Go (unlike Python)
+3. **Documentation pattern**: Followed existing docstring pattern in the file (method description + endpoint comment)
+
+### Files Created/Modified
+- `pkg/client/accounts.go` - Added Preferences() method (lines 156-182)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+- No vet warnings: `go vet ./pkg/client`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 8 depends on Task 1 (PreferencesResponse type) - COMPLETED
+- Task 8 depends on Task 5 (Token auto-refresh) - COMPLETED
+- Task 8 will be tested in Task 12 (Account method tests)
