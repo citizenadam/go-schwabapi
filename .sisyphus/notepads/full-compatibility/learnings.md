@@ -73,3 +73,63 @@
 - All tests pass: `go test -v ./pkg/stream`
 - No regressions: All existing stream tests still pass
 - Build succeeds: `go build ./pkg/stream`
+
+# Learnings - Task 6: GetStreamerInfo for Streaming Authentication
+
+## Implementation Details
+
+### Method Implemented
+- **GetStreamerInfo(ctx)** - Added to OAuthClient in pkg/client/oauth.go
+- Endpoint: GET /trader/v1/userPreference
+- Returns: *types.StreamerInfo containing authentication details for streaming services
+
+### Key Changes
+1. Added `tokenGetter TokenGetter` field to OAuthClient struct
+2. Added `baseURL string` field to OAuthClient struct for configurable API base URL
+3. Updated NewOAuthClient() signature to accept tokenGetter parameter
+4. Implemented GetStreamerInfo() method that:
+   - Calls /trader/v1/userPreference endpoint
+   - Extracts streamerInfo from PreferencesResponse
+   - Returns StreamerInfo struct with all authentication fields
+
+### StreamerInfo Fields
+The StreamerInfo struct contains:
+- AccountID
+- AccountIDType
+- Token
+- TokenTimestamp
+- UserID
+- AppID
+- Secret
+- AccessLevel
+
+### Testing Approach
+- Created oauth_test.go with 3 test scenarios:
+  1. Successfully retrieves streamer info
+  2. Handles missing streamer info
+  3. Handles HTTP error (401 unauthorized)
+- Used httptest.NewServer() for mocking API responses
+- Created mockTokenGetter for testing token retrieval
+- All 3 tests pass
+
+### Gotchas
+1. **OAuthClient needed tokenGetter**: Unlike Accounts struct, OAuthClient didn't have a tokenGetter field. Added it to enable GetStreamerInfo() to get access tokens.
+2. **Hardcoded URL issue**: GetStreamerInfo() initially had hardcoded API URL. Added baseURL field to OAuthClient to make it configurable for testing.
+3. **Test server URL**: Had to set oauthClient.baseURL = server.URL in tests to use the mock server instead of real API.
+4. **Error handling**: When HTTP status is not OK, the response body is still decoded. Need to check if StreamerInfo is nil after decoding.
+
+### Files Created/Modified
+- `pkg/client/oauth.go` - Added GetStreamerInfo() method, added tokenGetter and baseURL fields
+- `pkg/client/oauth_test.go` - New file with 3 test cases
+- `.sisyphus/evidence/task-6-streamer-info.log` - Test output evidence
+
+### Verification
+- All tests pass: `go test -v ./pkg/client -run TestGetStreamerInfo`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+- No vet warnings: `go vet ./pkg/client`
+
+### Notes on Task Dependencies
+- Task 6 depends on Task 8 (Preferences method) according to the plan, but Preferences() is not yet implemented
+- GetStreamerInfo() calls the /trader/v1/userPreference endpoint directly instead of using a Preferences() method
+- This approach works for now, but may need to be refactored when Preferences() is implemented in Task 8

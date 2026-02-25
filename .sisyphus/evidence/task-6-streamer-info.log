@@ -1,0 +1,13 @@
+=== RUN   TestGetStreamerInfo
+=== RUN   TestGetStreamerInfo/successfully_retrieves_streamer_info
+2026/02/24 17:14:07 INFO successfully retrieved streamer info accountId=test-account-id
+=== RUN   TestGetStreamerInfo/handles_missing_streamer_info
+2026/02/24 17:14:07 ERROR streamer info not found in preferences response
+=== RUN   TestGetStreamerInfo/handles_HTTP_error
+2026/02/24 17:14:07 ERROR streamer info not found in preferences response
+--- PASS: TestGetStreamerInfo (0.04s)
+    --- PASS: TestGetStreamerInfo/successfully_retrieves_streamer_info (0.02s)
+    --- PASS: TestGetStreamerInfo/handles_missing_streamer_info (0.01s)
+    --- PASS: TestGetStreamerInfo/handles_HTTP_error (0.01s)
+PASS
+ok  	github.com/citizenadam/go-schwabapi/pkg/client	(cached)

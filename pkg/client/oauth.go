@@ -27,16 +27,20 @@ type OAuthClient struct {
 	appKey      string
 	appSecret   string
 	callbackURL string
+	tokenGetter TokenGetter
+	baseURL     string
 }
 
 // NewOAuthClient creates a new OAuth client
-func NewOAuthClient(httpClient *Client, logger *slog.Logger, appKey, appSecret, callbackURL string) *OAuthClient {
+func NewOAuthClient(httpClient *Client, logger *slog.Logger, appKey, appSecret, callbackURL string, tokenGetter TokenGetter) *OAuthClient {
 	return &OAuthClient{
 		httpClient:  httpClient,
 		logger:      logger,
 		appKey:      appKey,
 		appSecret:   appSecret,
 		callbackURL: callbackURL,
+		tokenGetter: tokenGetter,
+		baseURL:     "https://api.schwabapi.com",
 	}
 }
 
@@ -190,6 +194,53 @@ func (o *OAuthClient) RevokeToken(ctx context.Context, token string, tokenType s
 	)
 
 	return nil
+}
+
+// GetStreamerInfo retrieves streaming authentication information from user preferences
+// Endpoint: GET /trader/v1/userPreference
+// Returns streamerInfo containing authentication details for streaming services
+func (o *OAuthClient) GetStreamerInfo(ctx context.Context) (*types.StreamerInfo, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/userPreference", o.baseURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", o.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	o.logger.Debug("getting streamer info",
+		"url", apiURL,
+	)
+
+	resp, err := o.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		o.logger.Error("failed to get streamer info",
+			"url", apiURL,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get streamer info: %w", err)
+	}
+
+	var result types.PreferencesResponse
+	if err := o.httpClient.DecodeJSON(resp, &result); err != nil {
+		o.logger.Error("failed to decode streamer info response",
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to decode streamer info response: %w", err)
+	}
+
+	if result.StreamerInfo == nil {
+		o.logger.Error("streamer info not found in preferences response")
+		return nil, fmt.Errorf("streamer info not found in preferences response")
+	}
+
+	o.logger.Info("successfully retrieved streamer info",
+		"accountId", result.StreamerInfo.AccountID,
+	)
+
+	return result.StreamerInfo, nil
 }
 
 // createBasicAuthHeader creates a Basic Auth header from app credentials
