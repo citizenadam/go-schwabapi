@@ -299,3 +299,61 @@ func (a *Accounts) AccountOrdersAll(ctx context.Context, fromEnteredTime string,
 
 	return &result, nil
 }
+
+// Transactions retrieves transaction history for an account
+// Transactions retrieved can be filtered based on input parameters.
+// Endpoint: GET /trader/v1/accounts/{accountHash}/transactions
+func (a *Accounts) Transactions(ctx context.Context, accountHash string, startDate string, endDate string, transactionType string, symbol string) (*types.TransactionsResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/transactions", baseAPIURL, url.PathEscape(accountHash))
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	if startDate != "" {
+		params.Add("startDate", startDate)
+	}
+	if endDate != "" {
+		params.Add("endDate", endDate)
+	}
+	if transactionType != "" {
+		params.Add("type", transactionType)
+	}
+	if symbol != "" {
+		params.Add("symbol", symbol)
+	}
+
+	// Append query string to URL if we have parameters
+	if len(params) > 0 {
+		apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+	}
+
+	resp, err := a.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		a.logger.Error("failed to get account transactions",
+			"url", apiURL,
+			"accountHash", accountHash,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get account transactions: %w", err)
+	}
+
+	var result types.TransactionsResponse
+	if err := a.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode transactions response: %w", err)
+	}
+
+	a.logger.Info("successfully retrieved account transactions",
+		"accountHash", accountHash,
+		"transactionsCount", len(result.Transactions),
+	)
+
+	return &result, nil
+}

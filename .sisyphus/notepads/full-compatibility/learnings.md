@@ -292,3 +292,56 @@ The StreamerInfo struct contains:
 - Task 9 depends on Task 1 (AccountOrdersAllResponse type) - COMPLETED
 - Task 9 depends on Task 5 (Token auto-refresh) - COMPLETED
 - Task 9 will be tested in Task 11 (AccountOrders tests)
+
+# Learnings - Task 13: Transactions REST Method
+
+## Implementation Details
+
+### Method Implemented
+- **Transactions(ctx, accountHash, startDate, endDate, transactionType, symbol)** - Added to Accounts struct in pkg/client/accounts.go
+- Endpoint: GET /trader/v1/accounts/{accountHash}/transactions
+- Query parameters: startDate, endDate, type, symbol
+- Returns: *types.TransactionsResponse containing transaction history for an account
+
+### Key Patterns
+- Follows existing AccountOrders() pattern from pkg/client/accounts.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant and url.PathEscape(accountHash)
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Uses url.Values{} for query parameter building
+- Appends query string to URL only if parameters exist
+- Logs success/error with slog.Logger
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URL: `/trader/v1/accounts/{accountHash}/transactions`
+3. Added query parameters (startDate, endDate, type, symbol) if provided
+4. Set Authorization header with Bearer token
+5. Made GET request via a.httpClient.Get()
+6. Decoded JSON response into TransactionsResponse
+7. Logged success with transactions count
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task (tests will be added in Task 15)
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **Parameter naming**: The query parameter is "type" (not "transactionType") to match the API specification
+2. **Query parameter handling**: Only append query string if parameters exist (len(params) > 0)
+3. **Response type**: Uses TransactionsResponse (from Task 1) which contains []Transaction
+4. **No validation**: As per requirements, no validation is added for transaction types
+
+### Files Created/Modified
+- `pkg/client/accounts.go` - Added Transactions() method (lines 247-293)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+
+### Notes on Task Dependencies
+- Task 13 depends on Task 1 (TransactionsResponse type) - COMPLETED
+- Task 13 depends on Task 5 (Token auto-refresh) - COMPLETED
+- Task 13 will be tested in Task 15 (Transaction tests)
