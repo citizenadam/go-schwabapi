@@ -57,6 +57,41 @@ func (o *OrdersClient) PlaceOrder(ctx context.Context, accountHash string, order
 	return resp, nil
 }
 
+// PreviewOrder validates an order before placing it
+// POST /v1/accounts/{accountHash}/orders/validate
+func (o *OrdersClient) PreviewOrder(ctx context.Context, accountHash string, order any) (*http.Response, error) {
+	// Add deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	url := fmt.Sprintf("%s/v1/accounts/%s/orders/validate", baseAPIURL, accountHash)
+	headers := map[string]string{
+		"Accept":       "application/json",
+		"Content-Type": "application/json",
+	}
+
+	o.logger.Info("previewing order",
+		"accountHash", accountHash,
+		"url", url,
+	)
+
+	resp, err := o.client.Post(ctx, url, headers, order)
+	if err != nil {
+		o.logger.Error("failed to preview order",
+			"accountHash", accountHash,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to preview order: %w", err)
+	}
+
+	o.logger.Info("order previewed successfully",
+		"accountHash", accountHash,
+		"status", resp.StatusCode,
+	)
+
+	return resp, nil
+}
+
 // CancelOrder cancels a specific order by its ID
 // DELETE /v1/accounts/{accountHash}/orders/{orderId}
 func (o *OrdersClient) CancelOrder(ctx context.Context, accountHash string, orderId string) (*http.Response, error) {
