@@ -16,8 +16,18 @@ type AccountDetailsResponse struct {
 	Accounts []Account `json:"accounts,omitempty"`
 }
 
+// AccountDetailsAllResponse represents response for all account details
+type AccountDetailsAllResponse struct {
+	Accounts []Account `json:"accounts,omitempty"`
+}
+
 // AccountOrdersResponse represents response for account orders
 type AccountOrdersResponse struct {
+	Orders []Order `json:"orders,omitempty"`
+}
+
+// AccountOrdersAllResponse represents response for all account orders
+type AccountOrdersAllResponse struct {
 	Orders []Order `json:"orders,omitempty"`
 }
 
