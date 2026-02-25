@@ -133,3 +133,56 @@ The StreamerInfo struct contains:
 - Task 6 depends on Task 8 (Preferences method) according to the plan, but Preferences() is not yet implemented
 - GetStreamerInfo() calls the /trader/v1/userPreference endpoint directly instead of using a Preferences() method
 - This approach works for now, but may need to be refactored when Preferences() is implemented in Task 8
+
+# Learnings - Task 7: AccountDetailsAll REST Method
+
+## Implementation Details
+
+### Method Implemented
+- **AccountDetailsAll(ctx, fields string)** - Added to Accounts struct in pkg/client/accounts.go
+- Endpoint: GET /trader/v1/accounts/ (with trailing slash)
+- Query parameter: `fields` (comma-separated options: "positions")
+- Returns: *types.AccountDetailsAllResponse containing all linked accounts with balances/positions
+
+### Key Patterns
+- Follows existing LinkedAccounts() pattern from pkg/client/accounts.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Uses url.Values{} for query parameter building
+- Appends query string to URL only if parameters exist
+- Logs success/error with slog.Logger
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URL: `/trader/v1/accounts/` (with trailing slash as specified)
+3. Added query parameter `fields` if provided
+4. Set Authorization header with Bearer token
+5. Made GET request via a.httpClient.Get()
+6. Decoded JSON response into AccountDetailsAllResponse
+7. Logged success with account count
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task (tests will be added in Task 10)
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **Trailing slash requirement**: The endpoint must include trailing slash `/trader/v1/accounts/` (not `/trader/v1/accounts`)
+2. **Query parameter handling**: Only append query string if parameters exist (len(params) > 0)
+3. **Response type**: Uses AccountDetailsAllResponse (from Task 1) which has same structure as AccountDetailsResponse (both contain []Account)
+
+### Files Created/Modified
+- `pkg/client/accounts.go` - Added AccountDetailsAll() method (lines 73-108)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 7 depends on Task 1 (AccountDetailsAllResponse type) - COMPLETED
+- Task 7 depends on Task 5 (Token auto-refresh) - COMPLETED
+- Task 7 will be tested in Task 10 (Account method tests)

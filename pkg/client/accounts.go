@@ -107,6 +107,52 @@ func (a *Accounts) AccountDetails(ctx context.Context, accountHash string, field
 	return &result, nil
 }
 
+// AccountDetailsAll retrieves all linked accounts with balances and positions
+// Endpoint: GET /trader/v1/accounts/
+func (a *Accounts) AccountDetailsAll(ctx context.Context, fields string) (*types.AccountDetailsAllResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	if fields != "" {
+		params.Add("fields", fields)
+	}
+
+	// Append query string to URL if we have parameters
+	if len(params) > 0 {
+		apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+	}
+
+	resp, err := a.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		a.logger.Error("failed to get all account details",
+			"url", apiURL,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get all account details: %w", err)
+	}
+
+	var result types.AccountDetailsAllResponse
+	if err := a.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode account details all response: %w", err)
+	}
+
+	a.logger.Info("successfully retrieved all account details",
+		"count", len(result.Accounts),
+	)
+
+	return &result, nil
+}
+
 // AccountOrders retrieves all orders for a specific account
 // Orders retrieved can be filtered based on input parameters. Maximum date range is 1 year.
 // Endpoint: GET /trader/v1/accounts/{accountHash}/orders
