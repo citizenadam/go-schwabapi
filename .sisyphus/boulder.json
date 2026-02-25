@@ -1,0 +1,11 @@
+{
+  "active_plan": "/go/go-schwabapi/.sisyphus/plans/full-compatibility.md",
+  "started_at": "2026-02-25T01:00:04.263Z",
+  "session_ids": [
+    "ses_36dc2e4e5ffeDXM5BxJD7BoxLV",
+    "ses_36ce58b19ffeQUo6UDnmlTsm1N",
+    "ses_36cbde067ffeWGrhbMu5nRyD7G"
+  ],
+  "plan_name": "full-compatibility",
+  "agent": "atlas"
+}
