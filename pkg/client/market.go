@@ -455,3 +455,137 @@ func (m *Market) MarketHour(ctx context.Context, marketId string, date string) (
 
 	return &result, nil
 }
+
+// Instruments retrieves instruments by symbols
+// Endpoint: GET /trader/v1/instruments/instruments
+func (m *Market) Instruments(ctx context.Context, symbols string, projection string) (*types.InstrumentsResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/instruments/instruments", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("symbols", symbols)
+	if projection != "" {
+		params.Add("projection", projection)
+	}
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get instruments",
+			"url", apiURL,
+			"symbols", symbols,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get instruments: %w", err)
+	}
+
+	var result types.InstrumentsResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode instruments response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved instruments",
+		"count", len(result.Instruments),
+	)
+
+	return &result, nil
+}
+
+// InstrumentCusip retrieves instrument by CUSIP
+// Endpoint: GET /trader/v1/instruments/cusip/{cusip}
+func (m *Market) InstrumentCusip(ctx context.Context, cusip string) (*types.InstrumentCusipResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/instruments/cusip/%s", baseAPIURL, url.PathEscape(cusip))
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get instrument by CUSIP",
+			"url", apiURL,
+			"cusip", cusip,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get instrument by CUSIP: %w", err)
+	}
+
+	var result types.InstrumentCusipResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode instrument CUSIP response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved instrument by CUSIP",
+		"cusip", cusip,
+	)
+
+	return &result, nil
+}
+
+// OptionExpirationChain retrieves option expiration chain
+// Endpoint: GET /marketdata/v1/expirationchain
+func (m *Market) OptionExpirationChain(ctx context.Context, symbol string, putCall string, strikePriceFrom float64, strikePriceTo float64) (*types.OptionExpirationChainResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/expirationchain", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("symbol", symbol)
+	if putCall != "" {
+		params.Add("putCall", putCall)
+	}
+	if strikePriceFrom > 0 {
+		params.Add("strikePriceFrom", fmt.Sprintf("%f", strikePriceFrom))
+	}
+	if strikePriceTo > 0 {
+		params.Add("strikePriceTo", fmt.Sprintf("%f", strikePriceTo))
+	}
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get option expiration chain",
+			"url", apiURL,
+			"symbol", symbol,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get option expiration chain: %w", err)
+	}
+
+	var result types.OptionExpirationChainResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode option expiration chain response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved option expiration chain",
+		"symbol", symbol,
+	)
+
+	return &result, nil
+}
