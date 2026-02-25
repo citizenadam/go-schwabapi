@@ -357,3 +357,41 @@ func (a *Accounts) Transactions(ctx context.Context, accountHash string, startDa
 
 	return &result, nil
 }
+
+// TransactionDetails retrieves details for a specific transaction
+// Endpoint: GET /trader/v1/accounts/{accountHash}/transactions/{transactionId}
+func (a *Accounts) TransactionDetails(ctx context.Context, accountHash string, transactionId string) (*types.TransactionDetailsResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/transactions/%s", baseAPIURL, url.PathEscape(accountHash), url.PathEscape(transactionId))
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	resp, err := a.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		a.logger.Error("failed to get transaction details",
+			"url", apiURL,
+			"accountHash", accountHash,
+			"transactionId", transactionId,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get transaction details: %w", err)
+	}
+
+	var result types.TransactionDetailsResponse
+	if err := a.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode transaction details response: %w", err)
+	}
+
+	a.logger.Info("successfully retrieved transaction details",
+		"accountHash", accountHash,
+		"transactionId", transactionId,
+	)
+
+	return &result, nil
+}

@@ -345,3 +345,52 @@ The StreamerInfo struct contains:
 - Task 13 depends on Task 1 (TransactionsResponse type) - COMPLETED
 - Task 13 depends on Task 5 (Token auto-refresh) - COMPLETED
 - Task 13 will be tested in Task 15 (Transaction tests)
+
+# Learnings - Task 14: TransactionDetails REST Method
+
+## Implementation Details
+
+### Method Implemented
+- **TransactionDetails(ctx, accountHash, transactionId)** - Added to Accounts struct in pkg/client/accounts.go
+- Endpoint: GET /trader/v1/accounts/{accountHash}/transactions/{transactionId}
+- Returns: *types.TransactionDetailsResponse containing details for a specific transaction
+
+### Key Patterns
+- Follows existing AccountDetails() pattern from pkg/client/accounts.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant and url.PathEscape() for both accountHash and transactionId
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Logs success/error with slog.Logger
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URL: `/trader/v1/accounts/{accountHash}/transactions/{transactionId}`
+3. Applied url.PathEscape() to both accountHash and transactionId for proper URL encoding
+4. Set Authorization header with Bearer token
+5. Made GET request via a.httpClient.Get()
+6. Decoded JSON response into TransactionDetailsResponse
+7. Logged success with accountHash and transactionId
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task (tests will be added in Task 16)
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **URL escaping**: Both accountHash and transactionId must be escaped using url.PathEscape() to handle special characters
+2. **No validation**: As per requirements, no validation is added for transactionId
+3. **Response type**: Uses TransactionDetailsResponse (from Task 1) which contains a single Transaction field
+
+### Files Created/Modified
+- `pkg/client/accounts.go` - Added TransactionDetails() method (lines 361-387)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+
+### Notes on Task Dependencies
+- Task 14 depends on Task 1 (TransactionDetailsResponse type) - COMPLETED
+- Task 14 depends on Task 5 (Token auto-refresh) - COMPLETED
+- Task 14 will be tested in Task 16 (Transaction tests)
