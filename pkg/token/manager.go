@@ -256,11 +256,30 @@ func (m *Manager) updateRefreshToken(ctx context.Context) error {
 	return nil
 }
 
-// GetAccessToken returns the current access token
+// GetAccessToken returns the current access token with auto-refresh
 func (m *Manager) GetAccessToken() string {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.accessToken
+	accessTokenIssued := m.accessTokenIssued
+	expiresIn := m.expiresIn
+	accessToken := m.accessToken
+	m.mu.RUnlock()
+
+	timeUntilExpiry := time.Until(accessTokenIssued.Add(time.Duration(expiresIn) * time.Second))
+
+	if timeUntilExpiry < AccessThreshold && !accessTokenIssued.IsZero() && accessToken != "" {
+		m.logger.Debug("Access token expiring soon, auto-refreshing",
+			"expires_in", timeUntilExpiry.Seconds(),
+		)
+		if _, err := m.UpdateTokens(context.Background(), true, false); err != nil {
+			m.logger.Error("Failed to auto-refresh access token", "error", err)
+		} else {
+			m.mu.RLock()
+			accessToken = m.accessToken
+			m.mu.RUnlock()
+		}
+	}
+
+	return accessToken
 }
 
 // GetRefreshToken returns the current refresh token

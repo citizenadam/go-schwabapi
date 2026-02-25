@@ -1,0 +1,5 @@
+=== RUN   TestManager_UpdateTokens_AutoRefreshAccessToken
+2026/02/24 17:10:49 INFO Access token updated time=2026-02-25T01:10:49Z
+--- PASS: TestManager_UpdateTokens_AutoRefreshAccessToken (0.02s)
+PASS
+ok  	github.com/citizenadam/go-schwabapi/pkg/token	0.023s
