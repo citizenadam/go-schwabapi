@@ -669,3 +669,57 @@ The StreamerInfo struct contains:
 - Task 45 depends on Task 35 (Level One streaming services) - COMPLETED
 - Task 45 depends on Task 40 (Book streaming services) - COMPLETED
 - Task 45 depends on Task 42 (Chart streaming services) - COMPLETED
+
+# Learnings - Task 48: AccountActivity Streaming Service Method
+
+## Implementation Details
+
+### Method Implemented
+- **AccountActivity(ctx, manager, keys, fields, command)** - Subscribes to Account Activity data
+- Service name: ACCOUNT_ACTIVITY
+- Default keys: "Account Activity"
+- Default fields: "0,1,2,3"
+- Default command: "SUBS"
+
+### Key Patterns
+- Follows Level One pattern from Task 35:
+  1. Create Subscription struct with service name (ACCOUNT_ACTIVITY)
+  2. Call Manager.RecordRequest() for crash recovery
+  3. Marshal Subscription to JSON
+  4. Send via Client.Write()
+- Commands: ADD, SUBS, UNSUBS, VIEW, LOGIN, LOGOUT
+- Parameters: keys (comma-separated), fields (comma-separated)
+
+### Implementation Steps
+1. Added AccountActivity() method to pkg/stream/services.go
+2. Method:
+   - Creates Subscription struct with service name, command, and parameters
+   - Records request via Manager.RecordRequest() for crash recovery
+   - Marshals subscription to JSON
+   - Sends via Client.Write()
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/stream`
+- No new tests were created for this task
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Gotchas
+1. **Service name**: ACCOUNT_ACTIVITY (not ACCOUNT_ACTIVITIES)
+2. **Consistent pattern**: Follows exact same pattern as Level One, Book, Chart, and Screener services
+3. **No validation**: As per requirements, no client-side validation for keys
+
+### Files Created/Modified
+- `pkg/stream/services.go` - Added AccountActivity() method
+
+### Verification
+- All tests pass: `go test -v ./pkg/stream`
+- No regressions: All existing stream tests still pass
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 48 depends on Task 35 (Level One streaming services) - COMPLETED
+- Task 48 depends on Task 40 (Book streaming services) - COMPLETED
+- Task 48 depends on Task 42 (Chart streaming services) - COMPLETED
+- Task 48 depends on Task 45 (Screener streaming services) - COMPLETED

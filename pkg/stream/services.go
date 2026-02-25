@@ -344,3 +344,29 @@ func (c *Client) ScreenerOption(ctx context.Context, manager *Manager, keys stri
 
 	return c.Write(data)
 }
+
+// AccountActivity subscribes to Account Activity data
+func (c *Client) AccountActivity(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "ACCOUNT_ACTIVITY",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
