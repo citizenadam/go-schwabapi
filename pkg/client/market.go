@@ -123,6 +123,52 @@ func (m *Market) Quote(ctx context.Context, symbol string, fields string) (*type
 	return &result, nil
 }
 
+// Movers retrieves market movers for an index
+// Endpoint: GET /marketdata/v1/movers
+func (m *Market) Movers(ctx context.Context, index string, direction string, change string) (*types.MoversResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/movers", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("index", index)
+	params.Add("direction", direction)
+	params.Add("change", change)
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get movers",
+			"url", apiURL,
+			"index", index,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get movers: %w", err)
+	}
+
+	var result types.MoversResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode movers response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved movers",
+		"index", index,
+		"count", len(result.Movers),
+	)
+
+	return &result, nil
+}
+
 // OptionChainsRequest represents parameters for option chains request
 type OptionChainsRequest struct {
 	Symbol                 string

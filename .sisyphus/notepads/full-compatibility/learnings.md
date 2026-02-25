@@ -394,3 +394,55 @@ The StreamerInfo struct contains:
 - Task 14 depends on Task 1 (TransactionDetailsResponse type) - COMPLETED
 - Task 14 depends on Task 5 (Token auto-refresh) - COMPLETED
 - Task 14 will be tested in Task 16 (Transaction tests)
+
+# Learnings - Task 18: Movers REST Method
+
+## Implementation Details
+
+### Method Implemented
+- **Movers(ctx, index, direction, change)** - Added to Market struct in pkg/client/market.go
+- Endpoint: GET /marketdata/v1/movers
+- Query parameters: index, direction, change
+- Returns: *types.MoversResponse containing market movers for an index
+
+### Key Patterns
+- Follows existing Quotes() pattern from pkg/client/market.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Uses url.Values{} for query parameter building
+- Appends query string to URL
+- Logs success/error with slog.Logger
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URL: `/marketdata/v1/movers`
+3. Added query parameters (index, direction, change)
+4. Set Authorization header with Bearer token
+5. Made GET request via m.httpClient.Get()
+6. Decoded JSON response into MoversResponse
+7. Logged success with movers count
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task (tests will be added in future tasks)
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **No validation**: As per requirements, no validation is added for index/direction/change parameters
+2. **Response type**: Uses MoversResponse (from Task 1) which contains Symbol and []Mover fields
+3. **Query parameter handling**: All three parameters (index, direction, change) are required and added to query string
+
+### Files Created/Modified
+- `pkg/client/market.go` - Added Movers() method (lines 126-169)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 18 depends on Task 1 (MoversResponse type) - COMPLETED
+- Task 18 depends on Task 5 (Token auto-refresh) - COMPLETED
