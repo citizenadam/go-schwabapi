@@ -1,0 +1,40 @@
+TASK 9: Add AccountOrdersAll() REST method to pkg/client/accounts.go
+====================================================================
+
+Date: 2026-02-24
+Status: COMPLETED
+
+IMPLEMENTATION
+--------------
+File Modified: pkg/client/accounts.go
+
+Method Added:
+- AccountOrdersAll(ctx, fromEnteredTime, toEnteredTime, maxResults, status)
+- Endpoint: GET /trader/v1/orders
+- Query Parameters:
+  * fromEnteredTime: Filter orders from this date
+  * toEnteredTime: Filter orders to this date
+  * maxResults: Maximum number of results to return
+  * status: Order status filter
+- Returns: *types.AccountOrdersAllResponse
+
+Pattern Followed:
+- Matches existing AccountOrders() implementation
+- Uses TokenGetter.GetAccessToken() for authentication
+- Uses 30-second context timeout
+- Proper error handling and logging
+- Query parameter building with url.Values
+
+VERIFICATION
+------------
+Test Command: go test -v ./pkg/client
+Result: PASS (all tests passed)
+
+LSP Diagnostics: Clean (no errors)
+
+NOTES
+-----
+- No pagination implemented (as per requirements)
+- Follows existing codebase patterns and conventions
+- Public API docstring included for documentation
+- Inline comments match existing patterns in codebase

@@ -243,3 +243,59 @@ func (a *Accounts) AccountOrders(ctx context.Context, accountHash string, fromEn
 
 	return &result, nil
 }
+
+// AccountOrdersAll retrieves all orders across all accounts
+// Orders retrieved can be filtered based on input parameters. Maximum date range is 1 year.
+// Endpoint: GET /trader/v1/orders
+func (a *Accounts) AccountOrdersAll(ctx context.Context, fromEnteredTime string, toEnteredTime string, maxResults int, status string) (*types.AccountOrdersAllResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/trader/v1/orders", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	if fromEnteredTime != "" {
+		params.Add("fromEnteredTime", fromEnteredTime)
+	}
+	if toEnteredTime != "" {
+		params.Add("toEnteredTime", toEnteredTime)
+	}
+	if maxResults > 0 {
+		params.Add("maxResults", fmt.Sprintf("%d", maxResults))
+	}
+	if status != "" {
+		params.Add("status", status)
+	}
+
+	// Append query string to URL if we have parameters
+	if len(params) > 0 {
+		apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+	}
+
+	resp, err := a.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		a.logger.Error("failed to get all account orders",
+			"url", apiURL,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get all account orders: %w", err)
+	}
+
+	var result types.AccountOrdersAllResponse
+	if err := a.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode account orders all response: %w", err)
+	}
+
+	a.logger.Info("successfully retrieved all account orders",
+		"ordersCount", len(result.Orders),
+	)
+
+	return &result, nil
+}

@@ -238,3 +238,57 @@ The StreamerInfo struct contains:
 - Task 8 depends on Task 1 (PreferencesResponse type) - COMPLETED
 - Task 8 depends on Task 5 (Token auto-refresh) - COMPLETED
 - Task 8 will be tested in Task 12 (Account method tests)
+
+# Learnings - Task 9: AccountOrdersAll REST Method
+
+## Implementation Details
+
+### Method Implemented
+- **AccountOrdersAll(ctx, fromEnteredTime, toEnteredTime, maxResults, status)** - Added to Accounts struct in pkg/client/accounts.go
+- Endpoint: GET /trader/v1/orders (no accountHash in path)
+- Query parameters: fromEnteredTime, toEnteredTime, maxResults, status
+- Returns: *types.AccountOrdersAllResponse containing all orders across all accounts
+
+### Key Patterns
+- Follows existing AccountOrders() pattern from pkg/client/accounts.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Uses url.Values{} for query parameter building
+- Appends query string to URL only if parameters exist
+- Logs success/error with slog.Logger
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URL: `/trader/v1/orders` (no accountHash, unlike AccountOrders())
+3. Added query parameters (fromEnteredTime, toEnteredTime, maxResults, status) if provided
+4. Set Authorization header with Bearer token
+5. Made GET request via a.httpClient.Get()
+6. Decoded JSON response into AccountOrdersAllResponse
+7. Logged success with orders count
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task (tests will be added in Task 11)
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **No accountHash in endpoint**: Unlike AccountOrders() which uses `/trader/v1/accounts/{accountHash}/orders`, AccountOrdersAll() uses `/trader/v1/orders` (no accountHash)
+2. **Query parameter handling**: Only append query string if parameters exist (len(params) > 0)
+3. **Response type**: Uses AccountOrdersAllResponse (from Task 1) which has same structure as AccountOrdersResponse (both contain []Order)
+4. **No pagination**: As per requirements, pagination is not implemented
+
+### Files Created/Modified
+- `pkg/client/accounts.go` - Added AccountOrdersAll() method (lines 247-293)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 9 depends on Task 1 (AccountOrdersAllResponse type) - COMPLETED
+- Task 9 depends on Task 5 (Token auto-refresh) - COMPLETED
+- Task 9 will be tested in Task 11 (AccountOrders tests)
