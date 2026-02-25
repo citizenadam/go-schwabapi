@@ -1,2 +1,60 @@
-#Opencode Files
-.sisyphus
+# Python
+.idea/
+__pycache__/
+*.env
+schwabdev.egg-info/
+tokens.json
+/docs/examples/tests
+
+# Go
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Block Convereted Python Files from being committed to the repo.
+*.py
+*.pyc
+*.pyo
+*.pyd
+*.venv
+__pycache__/
+.pytest_cache/
+
+
+# IDE specific files
+.vscode/
+*.swp
+*.swo
+*~
+.sisyphus/
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Build output
+bin/
+dist/
+
+# Coverage files
+coverage.txt
+coverage.html
+coverage.out
+
+# Debug files
+debug
+__debug_bin
