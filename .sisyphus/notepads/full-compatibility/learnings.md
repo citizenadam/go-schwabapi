@@ -511,3 +511,58 @@ The StreamerInfo struct contains:
 ### Notes on Task Dependencies
 - Task 19 depends on Task 1 (MarketHoursResponse, MarketHourResponse types) - COMPLETED
 - Task 19 depends on Task 5 (Token auto-refresh) - COMPLETED
+
+# Learnings - Task 35: Level One Streaming Service Methods
+
+## Implementation Details
+
+### Methods Implemented
+1. **LevelOneEquities(ctx, manager, keys, fields, command)** - Subscribes to Level One equity data
+2. **LevelOneOptions(ctx, manager, keys, fields, command)** - Subscribes to Level One options data
+3. **LevelOneFutures(ctx, manager, keys, fields, command)** - Subscribes to Level One futures data
+4. **LevelOneFuturesOptions(ctx, manager, keys, fields, command)** - Subscribes to Level One futures options data
+5. **LevelOneForex(ctx, manager, keys, fields, command)** - Subscribes to Level One forex data
+
+### Key Patterns
+- All methods follow the same pattern:
+  1. Create a Subscription struct with appropriate service name
+  2. Call Manager.RecordRequest() to track subscription for crash recovery
+  3. Marshal Subscription to JSON
+  4. Send via Client.Write()
+- Service names: LEVELONE_EQUITIES, LEVELONE_OPTIONS, LEVELONE_FUTURES, LEVELONE_FUTURES_OPTIONS, LEVELONE_FOREX
+- Commands: ADD, SUBS, UNSUBS, VIEW, LOGIN, LOGOUT
+- Parameters: keys (comma-separated), fields (comma-separated)
+
+### Implementation Steps
+1. Created pkg/stream/services.go (new file)
+2. Implemented 5 Level One methods with consistent pattern
+3. Each method:
+   - Creates Subscription struct with service name, command, and parameters
+   - Records request via Manager.RecordRequest() for crash recovery
+   - Marshals subscription to JSON
+   - Sends via Client.Write()
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/stream`
+- No new tests were created for this task (tests will be added in future tasks)
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Gotchas
+1. **Unused import**: Initially imported "log/slog" but didn't use it - removed import
+2. **Manager parameter**: Each method requires manager parameter to call RecordRequest()
+3. **RequestID**: Set to 0 for all subscriptions (may be used for request tracking in future)
+4. **JSON marshaling**: Must marshal Subscription before sending via Write()
+
+### Files Created/Modified
+- `pkg/stream/services.go` - New file with 5 Level One methods
+
+### Verification
+- All tests pass: `go test -v ./pkg/stream`
+- No regressions: All existing stream tests still pass
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 35 depends on Task 4 (Key formatting helpers) - COMPLETED
+- Task 35 depends on Task 6 (GetStreamerInfo) - COMPLETED
