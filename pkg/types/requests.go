@@ -5,6 +5,16 @@ type AccountDetailsRequest struct {
 	Fields string `json:"fields,omitempty"`
 }
 
+// AccountDetailsAllRequest represents request parameters for all account details
+type AccountDetailsAllRequest struct {
+	Fields string `json:"fields,omitempty"`
+}
+
+// GetPreferencesRequest represents request parameters for getting preferences
+type GetPreferencesRequest struct {
+	Fields string `json:"fields,omitempty"`
+}
+
 // AccountOrdersRequest represents request parameters for account orders
 type AccountOrdersRequest struct {
 	FromEnteredTime string `json:"fromEnteredTime,omitempty"`
