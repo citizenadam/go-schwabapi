@@ -266,3 +266,81 @@ func (c *Client) ChartFutures(ctx context.Context, manager *Manager, keys string
 
 	return c.Write(data)
 }
+
+// ScreenerEquity subscribes to Screener equity data
+func (c *Client) ScreenerEquity(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "SCREENER_EQUITY",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
+
+// ScreenerOptions subscribes to Screener options data
+func (c *Client) ScreenerOptions(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "SCREENER_OPTIONS",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
+
+// ScreenerOption subscribes to Screener option data
+func (c *Client) ScreenerOption(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "SCREENER_OPTION",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}

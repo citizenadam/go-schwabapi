@@ -616,3 +616,56 @@ The StreamerInfo struct contains:
 ### Notes on Task Dependencies
 - Task 42 depends on Task 35 (Level One streaming services) - COMPLETED
 - Task 42 depends on Task 40 (Book streaming services) - COMPLETED
+
+# Learnings - Task 45: Screener Streaming Service Methods
+
+## Implementation Details
+
+### Methods Implemented
+1. **ScreenerEquity(ctx, manager, keys, fields, command)** - Subscribes to Screener equity data
+2. **ScreenerOptions(ctx, manager, keys, fields, command)** - Subscribes to Screener options data
+3. **ScreenerOption(ctx, manager, keys, fields, command)** - Subscribes to Screener option data
+
+### Key Patterns
+- Follows Level One pattern from Task 35:
+  1. Create Subscription struct with service name (SCREENER_EQUITY, SCREENER_OPTIONS, SCREENER_OPTION)
+  2. Call Manager.RecordRequest() for crash recovery
+  3. Marshal Subscription to JSON
+  4. Send via Client.Write()
+- Commands: ADD, SUBS, UNSUBS, VIEW, LOGIN, LOGOUT
+- Parameters: keys (comma-separated), fields (comma-separated)
+
+### Implementation Steps
+1. Added ScreenerEquity() method to pkg/stream/services.go
+2. Added ScreenerOptions() method to pkg/stream/services.go
+3. Added ScreenerOption() method to pkg/stream/services.go
+4. Each method:
+   - Creates Subscription struct with service name, command, and parameters
+   - Records request via Manager.RecordRequest() for crash recovery
+   - Marshals subscription to JSON
+   - Sends via Client.Write()
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/stream`
+- No new tests were created for this task
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Gotchas
+1. **Service names**: SCREENER_EQUITY, SCREENER_OPTIONS, SCREENER_OPTION (note: SCREENER_OPTION is singular, not plural)
+2. **Consistent pattern**: Follows exact same pattern as Level One, Book, and Chart services
+3. **No validation**: As per requirements, no client-side validation for keys
+
+### Files Created/Modified
+- `pkg/stream/services.go` - Added ScreenerEquity(), ScreenerOptions(), and ScreenerOption() methods
+
+### Verification
+- All tests pass: `go test -v ./pkg/stream`
+- No regressions: All existing stream tests still pass
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 45 depends on Task 35 (Level One streaming services) - COMPLETED
+- Task 45 depends on Task 40 (Book streaming services) - COMPLETED
+- Task 45 depends on Task 42 (Chart streaming services) - COMPLETED
