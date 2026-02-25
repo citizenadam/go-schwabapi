@@ -566,3 +566,53 @@ The StreamerInfo struct contains:
 ### Notes on Task Dependencies
 - Task 35 depends on Task 4 (Key formatting helpers) - COMPLETED
 - Task 35 depends on Task 6 (GetStreamerInfo) - COMPLETED
+
+# Learnings - Task 42: Chart Streaming Service Methods
+
+## Implementation Details
+
+### Methods Implemented
+1. **ChartEquity(ctx, manager, keys, fields, command)** - Subscribes to Chart equity data
+2. **ChartFutures(ctx, manager, keys, fields, command)** - Subscribes to Chart futures data
+
+### Key Patterns
+- Follows Level One pattern from Task 35:
+  1. Create Subscription struct with service name (CHART_EQUITY, CHART_FUTURES)
+  2. Call Manager.RecordRequest() for crash recovery
+  3. Marshal Subscription to JSON
+  4. Send via Client.Write()
+- Commands: ADD, SUBS, UNSUBS, VIEW, LOGIN, LOGOUT
+- Parameters: keys (comma-separated), fields (comma-separated)
+
+### Implementation Steps
+1. Added ChartEquity() method to pkg/stream/services.go
+2. Added ChartFutures() method to pkg/stream/services.go
+3. Each method:
+   - Creates Subscription struct with service name, command, and parameters
+   - Records request via Manager.RecordRequest() for crash recovery
+   - Marshals subscription to JSON
+   - Sends via Client.Write()
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/stream`
+- No new tests were created for this task
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Gotchas
+1. **Service names**: CHART_EQUITY and CHART_FUTURES (not CHART_EQUITIES or CHART_FUTURE)
+2. **Consistent pattern**: Follows exact same pattern as Level One and Book services
+3. **No validation**: As per requirements, no client-side validation for keys
+
+### Files Created/Modified
+- `pkg/stream/services.go` - Added ChartEquity() and ChartFutures() methods
+
+### Verification
+- All tests pass: `go test -v ./pkg/stream`
+- No regressions: All existing stream tests still pass
+- Build succeeds: `go build ./pkg/stream`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 42 depends on Task 35 (Level One streaming services) - COMPLETED
+- Task 42 depends on Task 40 (Book streaming services) - COMPLETED

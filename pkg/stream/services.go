@@ -214,3 +214,55 @@ func (c *Client) OptionsBook(ctx context.Context, manager *Manager, keys string,
 
 	return c.Write(data)
 }
+
+// ChartEquity subscribes to Chart equity data
+func (c *Client) ChartEquity(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "CHART_EQUITY",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
+
+// ChartFutures subscribes to Chart futures data
+func (c *Client) ChartFutures(ctx context.Context, manager *Manager, keys string, fields string, command string) error {
+	req := &types.Subscription{
+		Service:   "CHART_FUTURES",
+		Command:   command,
+		RequestID: 0,
+		Parameters: &types.SubscriptionParams{
+			Keys:   keys,
+			Fields: fields,
+		},
+	}
+
+	// Record subscription for crash recovery
+	if err := manager.RecordRequest(ctx, req); err != nil {
+		return err
+	}
+
+	// Send subscription request
+	data, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return c.Write(data)
+}
