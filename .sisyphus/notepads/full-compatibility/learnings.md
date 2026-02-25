@@ -446,3 +446,68 @@ The StreamerInfo struct contains:
 ### Notes on Task Dependencies
 - Task 18 depends on Task 1 (MoversResponse type) - COMPLETED
 - Task 18 depends on Task 5 (Token auto-refresh) - COMPLETED
+
+# Learnings - Task 19: MarketHours and MarketHour REST Methods
+
+## Implementation Details
+
+### Methods Implemented
+1. **MarketHours(ctx, markets, date)** - Added to Market struct in pkg/client/market.go
+   - Endpoint: GET /marketdata/v1/markets (NOT /markethours)
+   - Query parameters: markets (comma-separated), date
+   - Returns: *types.MarketHoursResponse containing hours for multiple markets
+2. **MarketHour(ctx, marketId, date)** - Added to Market struct in pkg/client/market.go
+   - Endpoint: GET /marketdata/v1/markethours/{marketId}
+   - Query parameters: date
+   - Returns: *types.MarketHourResponse containing hours for a single market
+
+### Key Patterns
+- Follows existing Quotes() pattern from pkg/client/market.go
+- Uses context with 30-second timeout to prevent indefinite blocking
+- Constructs API URL with baseAPIURL constant
+- Sets Authorization header with Bearer token from tokenGetter.GetAccessToken()
+- Uses url.Values{} for query parameter building
+- Appends query string to URL only if parameters exist
+- Logs success/error with slog.Logger
+- Uses url.PathEscape() for marketId in MarketHour() endpoint
+
+### Implementation Steps
+1. Created context with timeout (30 seconds)
+2. Built API URLs:
+   - MarketHours: `/marketdata/v1/markets` (NOT /markethours)
+   - MarketHour: `/marketdata/v1/markethours/{marketId}`
+3. Added query parameters:
+   - MarketHours: markets (comma-separated), date
+   - MarketHour: date
+4. Set Authorization header with Bearer token
+5. Made GET request via m.httpClient.Get()
+6. Decoded JSON response into appropriate response type
+7. Logged success with market count or marketId
+
+### Testing Approach
+- All existing tests pass: `go test -v ./pkg/client`
+- No new tests were created for this task
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Gotchas
+1. **Endpoint difference**: MarketHours uses `/marketdata/v1/markets` (NOT `/marketdata/v1/markethours`) - this is different from Python endpoint naming
+2. **No validation**: As per requirements, no validation is added for market IDs
+3. **Query parameter handling**: Only append query string if parameters exist (len(params) > 0)
+4. **URL escaping**: marketId must be escaped using url.PathEscape() in MarketHour() endpoint
+5. **Response types**: 
+   - MarketHoursResponse has MarketHours map[string]*MarketHourInfo
+   - MarketHourResponse has MarketHourInfo *MarketHourInfo
+
+### Files Created/Modified
+- `pkg/client/market.go` - Added MarketHours() method (lines 366-410) and MarketHour() method (lines 412-457)
+
+### Verification
+- All tests pass: `go test -v ./pkg/client`
+- No regressions: All existing client tests still pass
+- Build succeeds: `go build ./pkg/client`
+- No diagnostics errors
+
+### Notes on Task Dependencies
+- Task 19 depends on Task 1 (MarketHoursResponse, MarketHourResponse types) - COMPLETED
+- Task 19 depends on Task 5 (Token auto-refresh) - COMPLETED

@@ -362,3 +362,96 @@ func (m *Market) PriceHistory(ctx context.Context, req *PriceHistoryRequest) (*t
 
 	return &result, nil
 }
+
+// MarketHours retrieves hours for multiple markets
+// Endpoint: GET /marketdata/v1/markets
+func (m *Market) MarketHours(ctx context.Context, markets []string, date string) (*types.MarketHoursResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/markets", baseAPIURL)
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	params.Add("markets", strings.Join(markets, ","))
+	if date != "" {
+		params.Add("date", date)
+	}
+
+	// Append query string to URL
+	apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get market hours",
+			"url", apiURL,
+			"markets", markets,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get market hours: %w", err)
+	}
+
+	var result types.MarketHoursResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode market hours response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved market hours",
+		"count", len(result.MarketHours),
+	)
+
+	return &result, nil
+}
+
+// MarketHour retrieves hours for a single market
+// Endpoint: GET /marketdata/v1/markethours/{marketId}
+func (m *Market) MarketHour(ctx context.Context, marketId string, date string) (*types.MarketHourResponse, error) {
+	// Create context with deadline to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("%s/marketdata/v1/markethours/%s", baseAPIURL, url.PathEscape(marketId))
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+	}
+
+	// Build query parameters
+	params := url.Values{}
+	if date != "" {
+		params.Add("date", date)
+	}
+
+	// Append query string to URL if we have parameters
+	if len(params) > 0 {
+		apiURL = fmt.Sprintf("%s?%s", apiURL, params.Encode())
+	}
+
+	resp, err := m.httpClient.Get(ctx, apiURL, headers)
+	if err != nil {
+		m.logger.Error("failed to get market hour",
+			"url", apiURL,
+			"marketId", marketId,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to get market hour: %w", err)
+	}
+
+	var result types.MarketHourResponse
+	if err := m.httpClient.DecodeJSON(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode market hour response: %w", err)
+	}
+
+	m.logger.Info("successfully retrieved market hour",
+		"marketId", marketId,
+	)
+
+	return &result, nil
+}
