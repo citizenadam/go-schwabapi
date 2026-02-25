@@ -10,16 +10,25 @@ import (
 
 // OrdersClient handles order management operations
 type OrdersClient struct {
-	client *Client
-	logger *slog.Logger
+	client      *Client
+	logger      *slog.Logger
+	baseURL     string // For testing purposes
+	tokenGetter TokenGetter
 }
 
 // NewOrdersClient creates a new orders client
-func NewOrdersClient(httpClient *Client, logger *slog.Logger) *OrdersClient {
+func NewOrdersClient(httpClient *Client, logger *slog.Logger, tokenGetter TokenGetter) *OrdersClient {
 	return &OrdersClient{
-		client: httpClient,
-		logger: logger,
+		client:      httpClient,
+		logger:      logger,
+		baseURL:     baseAPIURL,
+		tokenGetter: tokenGetter,
 	}
+}
+
+// SetBaseURL sets the base URL for testing purposes
+func (o *OrdersClient) SetBaseURL(url string) {
+	o.baseURL = url
 }
 
 // PlaceOrder places an order for a specific account
@@ -29,10 +38,11 @@ func (o *OrdersClient) PlaceOrder(ctx context.Context, accountHash string, order
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%s/v1/accounts/%s/orders", baseAPIURL, accountHash)
+	url := fmt.Sprintf("%s/v1/accounts/%s/orders", o.baseURL, accountHash)
 	headers := map[string]string{
-		"Accept":       "application/json",
-		"Content-Type": "application/json",
+		"Authorization": fmt.Sprintf("Bearer %s", o.tokenGetter.GetAccessToken()),
+		"Accept":        "application/json",
+		"Content-Type":  "application/json",
 	}
 
 	o.logger.Info("placing order",

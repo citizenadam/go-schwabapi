@@ -19,11 +19,7 @@ type Accounts struct {
 	httpClient  *Client
 	logger      *slog.Logger
 	tokenGetter TokenGetter
-}
-
-// TokenGetter interface for getting access tokens
-type TokenGetter interface {
-	GetAccessToken() string
+	baseURL     string // For testing purposes
 }
 
 // NewAccounts creates a new Accounts client
@@ -32,7 +28,18 @@ func NewAccounts(httpClient *Client, logger *slog.Logger, tokenGetter TokenGette
 		httpClient:  httpClient,
 		logger:      logger,
 		tokenGetter: tokenGetter,
+		baseURL:     baseAPIURL,
 	}
+}
+
+// SetBaseURL sets the base URL for testing purposes
+func (a *Accounts) SetBaseURL(url string) {
+	a.baseURL = url
+}
+
+// TokenGetter interface for getting access tokens
+type TokenGetter interface {
+	GetAccessToken() string
 }
 
 // LinkedAccounts retrieves all linked account numbers and hashes
@@ -42,7 +49,7 @@ func (a *Accounts) LinkedAccounts(ctx context.Context) (*types.LinkedAccountsRes
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/accounts/accountNumbers", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/accountNumbers", a.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
@@ -114,7 +121,7 @@ func (a *Accounts) AccountDetailsAll(ctx context.Context, fields string) (*types
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/accounts/", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/", a.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
@@ -160,7 +167,7 @@ func (a *Accounts) Preferences(ctx context.Context) (*types.PreferencesResponse,
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/userPreference", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/trader/v1/userPreference", a.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
@@ -252,7 +259,7 @@ func (a *Accounts) AccountOrdersAll(ctx context.Context, fromEnteredTime string,
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/orders", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/trader/v1/orders", a.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
@@ -308,7 +315,7 @@ func (a *Accounts) Transactions(ctx context.Context, accountHash string, startDa
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/transactions", baseAPIURL, url.PathEscape(accountHash))
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/transactions", a.baseURL, url.PathEscape(accountHash))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),

@@ -1,0 +1,54 @@
+=== RUN   TestIntegrationFullAccountWorkflow
+    integration_test.go:138: Step 1: AccountDetailsAll
+    integration_test.go:45: Received request: GET /trader/v1/accounts/
+    integration_test.go:66: Sending AccountDetailsAll response: {Accounts:[{AccountHash:test-hash-1 AccountNumber:12345678 AccountType: AccountStatus: PrimaryAccountID: DisplayName:}]}
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+    integration_test.go:144: Step 2: Preferences
+    integration_test.go:45: Received request: GET /trader/v1/userPreference
+2026/02/24 20:11:38 INFO successfully retrieved user preferences
+    integration_test.go:150: Step 3: PlaceOrder
+2026/02/24 20:11:38 INFO placing order accountHash=test-hash-1 url=http://127.0.0.1:43871/v1/accounts/test-hash-1/orders
+    integration_test.go:45: Received request: POST /v1/accounts/test-hash-1/orders
+2026/02/24 20:11:38 INFO order placed successfully accountHash=test-hash-1 status=201
+    integration_test.go:171: Step 4: OrderDetails
+    integration_test.go:173: Step 5: Transactions
+    integration_test.go:45: Received request: GET /trader/v1/accounts/test-hash-1/transactions
+2026/02/24 20:11:38 INFO successfully retrieved account transactions accountHash=test-hash-1 transactionsCount=1
+--- PASS: TestIntegrationFullAccountWorkflow (0.02s)
+=== RUN   TestIntegrationTokenRefresh
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+--- PASS: TestIntegrationTokenRefresh (0.00s)
+=== RUN   TestIntegrationStreamingWorkflow
+2026/02/24 20:11:38 INFO successfully retrieved user preferences
+--- PASS: TestIntegrationStreamingWorkflow (0.01s)
+=== RUN   TestIntegrationStreamingReconnect
+--- PASS: TestIntegrationStreamingReconnect (0.00s)
+=== RUN   TestIntegrationStreamingAutoResubscribe
+--- PASS: TestIntegrationStreamingAutoResubscribe (0.00s)
+=== RUN   TestIntegrationErrorHandling
+=== RUN   TestIntegrationErrorHandling/handles_401_unauthorized
+2026/02/24 20:11:38 ERROR failed to unmarshal response status=500 body="" error="unexpected end of JSON input"
+=== RUN   TestIntegrationErrorHandling/handles_500_server_error
+2026/02/24 20:11:38 ERROR failed to unmarshal response status=500 body="" error="unexpected end of JSON input"
+--- PASS: TestIntegrationErrorHandling (0.02s)
+    --- PASS: TestIntegrationErrorHandling/handles_401_unauthorized (0.01s)
+    --- PASS: TestIntegrationErrorHandling/handles_500_server_error (0.01s)
+=== RUN   TestIntegrationConcurrentRequests
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+2026/02/24 20:11:38 INFO successfully retrieved all account details count=1
+--- PASS: TestIntegrationConcurrentRequests (0.02s)
+=== RUN   TestIntegrationContextCancellation
+2026/02/24 20:11:38 ERROR GET request failed url="http://127.0.0.1:41953/trader/v1/accounts/?fields=positions" error="Get \"http://127.0.0.1:41953/trader/v1/accounts/?fields=positions\": context deadline exceeded"
+2026/02/24 20:11:38 ERROR failed to get all account details url="http://127.0.0.1:41953/trader/v1/accounts/?fields=positions" error="GET request failed: Get \"http://127.0.0.1:41953/trader/v1/accounts/?fields=positions\": context deadline exceeded"
+--- PASS: TestIntegrationContextCancellation (0.10s)
+=== RUN   TestIntegrationQueryParameters
+2026/02/24 20:11:38 INFO successfully retrieved all account orders ordersCount=1
+--- PASS: TestIntegrationQueryParameters (0.00s)
+=== RUN   TestIntegrationStreamingManagerPersistence
+--- PASS: TestIntegrationStreamingManagerPersistence (0.00s)
+PASS
+ok  	github.com/citizenadam/go-schwabapi/pkg	(cached)
