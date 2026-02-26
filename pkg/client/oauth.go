@@ -44,6 +44,35 @@ func NewOAuthClient(httpClient *Client, logger *slog.Logger, appKey, appSecret, 
 	}
 }
 
+// Exchange exchanges an authorization code for an access token and refresh token
+func (o *OAuthClient) Exchange(ctx context.Context, code string) (*types.Token, error) {
+	data := url.Values{}
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
+	data.Set("redirect_uri", o.callbackURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", o.createBasicAuthHeader())
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := o.httpClient.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var token types.Token
+	if err := o.httpClient.DecodeJSON(resp, &token); err != nil {
+		return nil, err
+	}
+
+	return &token, nil
+}
+
 // Authorize returns the authorization URL for the user to authenticate
 func (o *OAuthClient) Authorize(ctx context.Context) (string, error) {
 	// Build authorization URL with query parameters
