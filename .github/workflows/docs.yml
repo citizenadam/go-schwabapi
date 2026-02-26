@@ -3,7 +3,7 @@ name: Generate Documentation
 on:
   push:
     branches:
-      - main # Documentation updates on every push to main
+      - main 
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24' # Uses the latest stable Go version for 2026
+          go-version: '1.26'
 
       - name: Install doc2go
         run: go install go.abhg.dev/doc2go@latest
