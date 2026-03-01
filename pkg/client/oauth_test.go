@@ -23,7 +23,7 @@ func (m *mockTokenGetter) GetAccessToken() string {
 func TestGetStreamerInfo(t *testing.T) {
 	tests := []struct {
 		name           string
-		responseBody   interface{}
+		responseBody   any
 		responseStatus int
 		wantErr        bool
 		errContains    string

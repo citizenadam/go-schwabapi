@@ -74,7 +74,7 @@ func (o *OrdersClient) PreviewOrder(ctx context.Context, accountHash string, ord
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%s/v1/accounts/%s/orders/validate", baseAPIURL, accountHash)
+	url := fmt.Sprintf("%s/v1/accounts/%s/orders/validate", o.baseURL, accountHash)
 	headers := map[string]string{
 		"Accept":       "application/json",
 		"Content-Type": "application/json",
@@ -109,7 +109,7 @@ func (o *OrdersClient) CancelOrder(ctx context.Context, accountHash string, orde
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%s/v1/accounts/%s/orders/%s", baseAPIURL, accountHash, orderId)
+	url := fmt.Sprintf("%s/v1/accounts/%s/orders/%s", o.baseURL, accountHash, orderId)
 	headers := map[string]string{}
 
 	o.logger.Info("cancelling order",
@@ -144,7 +144,7 @@ func (o *OrdersClient) ReplaceOrder(ctx context.Context, accountHash string, ord
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%s/v1/accounts/%s/orders/%s", baseAPIURL, accountHash, orderId)
+	url := fmt.Sprintf("%s/v1/accounts/%s/orders/%s", o.baseURL, accountHash, orderId)
 	headers := map[string]string{
 		"Accept":       "application/json",
 		"Content-Type": "application/json",
@@ -182,7 +182,7 @@ func (o *OrdersClient) OrderDetails(ctx context.Context, accountHash string, ord
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%s/v1/accounts/%s/orders/%s", baseAPIURL, accountHash, orderId)
+	url := fmt.Sprintf("%s/v1/accounts/%s/orders/%s", o.baseURL, accountHash, orderId)
 	headers := map[string]string{}
 
 	o.logger.Info("getting order details",

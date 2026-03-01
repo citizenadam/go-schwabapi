@@ -10,10 +10,6 @@ import (
 	"github.com/citizenadam/go-schwabapi/pkg/types"
 )
 
-const (
-	baseAPIURL = "https://api.schwabapi.com"
-)
-
 // Accounts handles account-related API endpoints
 type Accounts struct {
 	httpClient  *Client
@@ -84,7 +80,7 @@ func (a *Accounts) AccountDetails(ctx context.Context, accountHash string, field
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s", baseAPIURL, url.PathEscape(accountHash))
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s", a.baseURL, url.PathEscape(accountHash))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
@@ -201,7 +197,7 @@ func (a *Accounts) AccountOrders(ctx context.Context, accountHash string, fromEn
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/orders", baseAPIURL, url.PathEscape(accountHash))
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/orders", a.baseURL, url.PathEscape(accountHash))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),
@@ -372,7 +368,7 @@ func (a *Accounts) TransactionDetails(ctx context.Context, accountHash string, t
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/transactions/%s", baseAPIURL, url.PathEscape(accountHash), url.PathEscape(transactionId))
+	apiURL := fmt.Sprintf("%s/trader/v1/accounts/%s/transactions/%s", a.baseURL, url.PathEscape(accountHash), url.PathEscape(transactionId))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", a.tokenGetter.GetAccessToken()),

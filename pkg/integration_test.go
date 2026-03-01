@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -148,15 +149,15 @@ func TestIntegrationFullAccountWorkflow(t *testing.T) {
 	assert.Equal(t, "test-account-id", preferences.StreamerInfo.AccountID)
 
 	t.Log("Step 3: PlaceOrder")
-	order := map[string]interface{}{
+	order := map[string]any{
 		"orderType": "MARKET",
 		"session":   "NORMAL",
 		"duration":  "DAY",
-		"orderLegs": []map[string]interface{}{
+		"orderLegs": []map[string]any{
 			{
 				"instruction": "BUY",
 				"quantity":    1,
-				"instrument": map[string]interface{}{
+				"instrument": map[string]any{
 					"symbol":    "AAPL",
 					"assetType": "EQUITY",
 				},
@@ -380,19 +381,19 @@ func TestIntegrationStreamingAutoResubscribe(t *testing.T) {
 
 	for service, keys := range allSubs {
 		for key, fields := range keys {
-			fieldsStr := ""
+			var fieldsStr strings.Builder
 			for i, f := range fields {
 				if i > 0 {
-					fieldsStr += ","
+					fieldsStr.WriteString(",")
 				}
-				fieldsStr += f
+				fieldsStr.WriteString(f)
 			}
 			req := &types.Subscription{
 				Command: "ADD",
 				Service: service,
 				Parameters: &types.SubscriptionParams{
 					Keys:   key,
-					Fields: fieldsStr,
+					Fields: fieldsStr.String(),
 				},
 			}
 			err = manager.RecordRequest(ctx, req)
@@ -476,7 +477,7 @@ func TestIntegrationConcurrentRequests(t *testing.T) {
 	ctx := context.Background()
 
 	done := make(chan bool, 5)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		go func() {
 			_, err := accounts.AccountDetailsAll(ctx, "positions")
 			assert.NoError(t, err)
@@ -484,7 +485,7 @@ func TestIntegrationConcurrentRequests(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		<-done
 	}
 }

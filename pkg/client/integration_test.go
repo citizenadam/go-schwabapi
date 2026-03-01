@@ -153,15 +153,15 @@ func TestIntegrationFullAccountWorkflow(t *testing.T) {
 
 	// Step 3: Place order
 	t.Log("Step 3: PlaceOrder")
-	order := map[string]interface{}{
+	order := map[string]any{
 		"orderType": "MARKET",
 		"session":   "NORMAL",
 		"duration":  "DAY",
-		"orderLegs": []map[string]interface{}{
+		"orderLegs": []map[string]any{
 			{
 				"instruction": "BUY",
 				"quantity":    1,
-				"instrument": map[string]interface{}{
+				"instrument": map[string]any{
 					"symbol":    "AAPL",
 					"assetType": "EQUITY",
 				},
@@ -374,7 +374,7 @@ func TestIntegrationConcurrentRequests(t *testing.T) {
 
 	// Make 5 concurrent requests
 	done := make(chan bool, 5)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		go func() {
 			_, err := accounts.AccountDetailsAll(ctx, "positions")
 			assert.NoError(t, err)
@@ -383,7 +383,7 @@ func TestIntegrationConcurrentRequests(t *testing.T) {
 	}
 
 	// Wait for all requests to complete
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		<-done
 	}
 }

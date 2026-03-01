@@ -16,6 +16,7 @@ type Market struct {
 	httpClient  *Client
 	logger      *slog.Logger
 	tokenGetter TokenGetter
+	baseURL     string // For testing purposes
 }
 
 // NewMarket creates a new Market client
@@ -24,7 +25,13 @@ func NewMarket(httpClient *Client, logger *slog.Logger, tokenGetter TokenGetter)
 		httpClient:  httpClient,
 		logger:      logger,
 		tokenGetter: tokenGetter,
+		baseURL:     baseAPIURL,
 	}
+}
+
+// SetBaseURL sets the base URL for testing purposes
+func (m *Market) SetBaseURL(url string) {
+	m.baseURL = url
 }
 
 // Quotes retrieves quotes for a list of symbols
@@ -34,7 +41,7 @@ func (m *Market) Quotes(ctx context.Context, symbols []string, fields string, in
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/quotes", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/marketdata/v1/quotes", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -83,7 +90,7 @@ func (m *Market) Quote(ctx context.Context, symbol string, fields string) (*type
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/%s/quotes", baseAPIURL, url.PathEscape(symbol))
+	apiURL := fmt.Sprintf("%s/marketdata/v1/%s/quotes", m.baseURL, url.PathEscape(symbol))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -130,7 +137,7 @@ func (m *Market) Movers(ctx context.Context, index string, direction string, cha
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/movers", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/marketdata/v1/movers", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -197,7 +204,7 @@ func (m *Market) OptionChains(ctx context.Context, req *OptionChainsRequest) (*t
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/chains", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/marketdata/v1/chains", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -302,7 +309,7 @@ func (m *Market) PriceHistory(ctx context.Context, req *PriceHistoryRequest) (*t
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/pricehistory", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/marketdata/v1/pricehistory", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -370,7 +377,7 @@ func (m *Market) MarketHours(ctx context.Context, markets []string, date string)
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/markets", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/marketdata/v1/markets", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -416,7 +423,7 @@ func (m *Market) MarketHour(ctx context.Context, marketId string, date string) (
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/markethours/%s", baseAPIURL, url.PathEscape(marketId))
+	apiURL := fmt.Sprintf("%s/marketdata/v1/markethours/%s", m.baseURL, url.PathEscape(marketId))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -463,7 +470,7 @@ func (m *Market) Instruments(ctx context.Context, symbols string, projection str
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/instruments/instruments", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/trader/v1/instruments/instruments", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -509,7 +516,7 @@ func (m *Market) InstrumentCusip(ctx context.Context, cusip string) (*types.Inst
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/trader/v1/instruments/cusip/%s", baseAPIURL, url.PathEscape(cusip))
+	apiURL := fmt.Sprintf("%s/trader/v1/instruments/cusip/%s", m.baseURL, url.PathEscape(cusip))
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),
@@ -545,7 +552,7 @@ func (m *Market) OptionExpirationChain(ctx context.Context, symbol string, putCa
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("%s/marketdata/v1/expirationchain", baseAPIURL)
+	apiURL := fmt.Sprintf("%s/marketdata/v1/expirationchain", m.baseURL)
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", m.tokenGetter.GetAccessToken()),

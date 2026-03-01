@@ -13,13 +13,6 @@ import (
 	"github.com/citizenadam/go-schwabapi/pkg/types"
 )
 
-const (
-	// OAuth endpoints
-	authorizeURL = "https://api.schwabapi.com/v1/oauth/authorize"
-	tokenURL     = "https://api.schwabapi.com/v1/oauth/token"
-	revokeURL    = "https://api.schwabapi.com/v1/oauth/revoke"
-)
-
 // OAuthClient handles OAuth operations for Schwab API
 type OAuthClient struct {
 	httpClient  *Client

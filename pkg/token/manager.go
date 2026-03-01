@@ -40,12 +40,6 @@ type Manager struct {
 	scope              string
 }
 
-// Auto-refresh thresholds
-const (
-	AccessThreshold  = 61 * time.Second           // 61 seconds for access token
-	RefreshThreshold = (60*60 + 30) * time.Second // 60.5 minutes for refresh token (3630 seconds)
-)
-
 // NewManager creates a new token manager
 func NewManager(dbPath string, logger *slog.Logger) (*Manager, error) {
 	adapter := &slogLoggerAdapter{logger: logger}
