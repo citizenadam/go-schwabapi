@@ -15,7 +15,7 @@ type Accounts struct {
 	httpClient  *Client
 	logger      *slog.Logger
 	tokenGetter TokenGetter
-	baseURL     string // For testing purposes
+	BaseAPIURL  string
 }
 
 // NewAccounts creates a new Accounts client

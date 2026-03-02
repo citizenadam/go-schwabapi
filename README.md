@@ -479,6 +479,4 @@ The Schwab API has rate limits. The library uses sensible timeouts and connectio
 - Dial timeout: 30 seconds
 - Connection pool: 100 max idle connections
 
-## License
 
-MIT License
