@@ -119,6 +119,34 @@ func (tm *TokenManager) AccessToken() (string, error) {
 	return tm.accessToken, nil
 }
 
+// TokenInfo holds a snapshot of the current token state for display purposes.
+type TokenInfo struct {
+	AccessToken        string    // raw token value (truncate before displaying)
+	AccessTokenIssued  time.Time // when the current access token was issued
+	RefreshTokenIssued time.Time // when the current refresh token was issued
+	AccessTokenExpiry  time.Time // when the access token expires
+	RefreshTokenExpiry time.Time // when the refresh token expires
+}
+
+// Valid reports whether the access token is currently unexpired.
+func (t TokenInfo) Valid() bool {
+	return time.Now().Before(t.AccessTokenExpiry)
+}
+
+// TokenInfo returns a snapshot of the current token state.
+// It does not trigger a refresh — call UpdateTokens first if needed.
+func (tm *TokenManager) TokenInfo() TokenInfo {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	return TokenInfo{
+		AccessToken:        tm.accessToken,
+		AccessTokenIssued:  tm.accessTokenIssued,
+		RefreshTokenIssued: tm.refreshTokenIssued,
+		AccessTokenExpiry:  tm.accessTokenIssued.Add(tm.accessTokenTimeout),
+		RefreshTokenExpiry: tm.refreshTokenIssued.Add(tm.refreshTokenTimeout),
+	}
+}
+
 // UpdateTokens checks expiry and refreshes tokens as needed.
 // Returns true if any refresh was performed.
 func (tm *TokenManager) UpdateTokens(forceAccessToken, forceRefreshToken bool) (bool, error) {
