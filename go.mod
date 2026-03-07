@@ -1,4 +1,4 @@
-module github.com/citizenadam/go-schwabapiv2
+module github.com/citizenadam/go-schwabapi
 
 go 1.26.0
 
