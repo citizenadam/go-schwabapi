@@ -373,16 +373,40 @@ type QuoteResponse Quote
 
 // Quote represents a complete quote with all data sections
 type Quote struct {
-	AssetMainType string       `json:"assetMainType"`
-	AssetSubType  string       `json:"assetSubType"`
-	QuoteType     string       `json:"quoteType"`
-	Realtime      bool         `json:"realtime"`
-	Ssid          int64        `json:"ssid"`
-	Symbol        string       `json:"symbol"`
-	Fundamental   *Fundamental `json:"fundamental,omitempty"`
-	QuoteData     *QuoteData   `json:"quote,omitempty"`
-	Reference     *Reference   `json:"reference,omitempty"`
-	Regular       *Regular     `json:"regular,omitempty"`
+	AssetMainType           string
+	AssetSubType            string
+	QuoteType               string
+	RealTime                bool
+	SSID                    int `json:"ssid"`
+	Symbol                  string
+	Hi52                    float64 `json:"52WeekHigh"`
+	Lo52                    float64 `json:"52WeekLow"`
+	AskMICId                string
+	AskPrice                float64
+	AskSize                 int
+	AskTime                 int
+	BidMICId                string
+	BidPrice                float64
+	BidSize                 int
+	BidTime                 int
+	Close                   float64 `json:"closePrice"`
+	HiPrice                 float64 `json:"highPrice"`
+	LastMICId               string
+	LastPrice               float64
+	LastSize                int
+	LoPrice                 float64 `json:"lowPrice"`
+	Mark                    float64 `json:"mark"`
+	MarkChange              float64
+	MarkPercentChange       float64
+	NetChange               float64
+	NetPercentChange        float64
+	Open                    float64
+	PostMarketChange        float64
+	PostMarketPercentChange float64
+	QuoteTime               int
+	SecurityStatus          string
+	TotalVolume             int
+	TradeTime               int
 }
 
 // Fundamental represents fundamental data
