@@ -62,7 +62,6 @@ const (
 	AutoCheckerSleep = 30 * time.Second
 )
 
-
 // Validation Constants
 const (
 	// AppKeyLength1 is the first valid length for app keys

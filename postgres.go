@@ -49,10 +49,10 @@ func (s *PostgresTokenStorage) Load(ctx context.Context) (*TokenRecord, error) {
 	row := s.db.QueryRowContext(ctx, query)
 
 	var (
-		rec                    TokenRecord
-		atIssued, rtIssued     time.Time
-		expiresIn              sql.NullInt64
-		tokenType, scope       sql.NullString
+		rec                TokenRecord
+		atIssued, rtIssued time.Time
+		expiresIn          sql.NullInt64
+		tokenType, scope   sql.NullString
 	)
 
 	err := row.Scan(
