@@ -1,13 +1,10 @@
 package schwabdev
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/fernet/fernet-go"
 )
-
-const encPrefix = "enc:"
 
 // Encrypt encrypts plaintext using the provided Fernet key.
 // If key is nil, returns plaintext unchanged (no encryption mode).
@@ -25,7 +22,7 @@ func Encrypt(plaintext string, key *fernet.Key) (string, error) {
 	}
 
 	// Return with prefix
-	return encPrefix + string(token), nil
+	return EncryptionPrefix + string(token), nil
 }
 
 // Decrypt decrypts ciphertext using the provided Fernet key.
@@ -34,20 +31,20 @@ func Encrypt(plaintext string, key *fernet.Key) (string, error) {
 // Otherwise, removes prefix and decrypts.
 func Decrypt(ciphertext string, key *fernet.Key) (string, error) {
 	// Not encrypted - return as-is
-	if !strings.HasPrefix(ciphertext, encPrefix) {
+	if !strings.HasPrefix(ciphertext, EncryptionPrefix) {
 		return ciphertext, nil
 	}
 
 	// Encrypted but no key - error
 	if key == nil {
-		return "", errors.New("cannot decrypt token: no encryption key provided")
+		return "", ErrDecryptionFailed
 	}
 
 	// Remove prefix and decrypt
-	token := ciphertext[len(encPrefix):]
+	token := ciphertext[len(EncryptionPrefix):]
 	message := fernet.VerifyAndDecrypt([]byte(token), 0, []*fernet.Key{key})
 	if message == nil {
-		return "", errors.New("decryption failed: invalid token or key")
+		return "", ErrDecryptionFailed
 	}
 
 	return string(message), nil
@@ -68,16 +65,7 @@ func GenerateKey() (*fernet.Key, error) {
 // The key can be in hexadecimal, standard base64, or URL-safe base64 format.
 // Returns the decoded key or an error if validation fails.
 func ValidateKey(keyString string) (*fernet.Key, error) {
-	if keyString == "" {
-		return nil, errors.New("empty key")
-	}
-
-	key, err := fernet.DecodeKey(keyString)
-	if err != nil {
-		return nil, err
-	}
-
-	return key, nil
+	return fernet.DecodeKey(keyString)
 }
 
 // EncodeKey encodes a Fernet key to URL-safe base64 string.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"math/rand"
 	"strings"
 	"sync"
@@ -288,9 +289,7 @@ func (s *Streamer) send(ctx context.Context, service, command string, keys, fiel
 		"keys":   strings.Join(keys, ","),
 		"fields": strings.Join(fields, ","),
 	}
-	for k, v := range extra {
-		params[k] = v
-	}
+	maps.Copy(params, extra)
 
 	req := s.buildRequest(service, command, params, info)
 
@@ -408,10 +407,7 @@ func (r *ReconnectManager) nextSleep() time.Duration {
 	jitter := float64(r.backoffTime) * r.jitterFactor * (rand.Float64()*2 - 1)
 	sleep := r.backoffTime + time.Duration(jitter)
 
-	next := time.Duration(float64(r.backoffTime) * 2)
-	if next > r.maxBackoff {
-		next = r.maxBackoff
-	}
+	next := min(time.Duration(float64(r.backoffTime)*2), r.maxBackoff)
 	r.backoffTime = next
 
 	return sleep
