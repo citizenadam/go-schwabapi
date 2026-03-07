@@ -310,7 +310,7 @@ func (c *Client) LinkedAccounts(ctx context.Context) (*LinkedAccountsResponse, e
 //   - fields: Optional fields to return (can be nil, e.g., "positions")
 //
 // Returns a pointer to AccountDetailsAllResponse containing account details and aggregated balances.
-func (c *Client) AccountDetailsAll(ctx context.Context, fields *string) (*AccountDetailsAllResponse, error) {
+func (c *Client) AccountDetailsAll(ctx context.Context, fields *string) ([]AccountDetailsAllResponse, error) {
 	path := "/trader/v1/accounts/"
 
 	if fields != nil {
@@ -318,13 +318,14 @@ func (c *Client) AccountDetailsAll(ctx context.Context, fields *string) (*Accoun
 		path = path + "?" + params.Encode()
 	}
 
-	var result AccountDetailsAllResponse
+	// Change result to a slice to match the JSON array returned by Schwab
+	var result []AccountDetailsAllResponse
 	_, err := c.request(ctx, "GET", path, nil, &result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account details for all accounts: %w", err)
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // AccountDetails retrieves specific account information with balances and positions.
