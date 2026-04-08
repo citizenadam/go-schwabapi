@@ -37,6 +37,33 @@ func NewPostgresTokenStorage(db *sql.DB, table string) (*PostgresTokenStorage, e
 	return s, nil
 }
 
+// NewPostgresTokenStorageWithoutMigrate creates a PostgresTokenStorage
+// without attempting to create/migrate the table. Use this when the table
+// is managed by external migrations (e.g., golang-migrate, db-mate).
+//
+// The caller is responsible for ensuring the table exists before calling Load/Save.
+//
+// Table must have the schema:
+//
+//	CREATE TABLE schwab_tokens (
+//	    singleton            BOOLEAN PRIMARY KEY DEFAULT TRUE,
+//	    access_token_issued  TIMESTAMPTZ NOT NULL,
+//	    refresh_token_issued TIMESTAMPTZ NOT NULL,
+//	    access_token         TEXT        NOT NULL,
+//	    refresh_token        TEXT        NOT NULL,
+//	    id_token             TEXT        NOT NULL DEFAULT '',
+//	    expires_in           INTEGER,
+//	    token_type           TEXT        DEFAULT 'Bearer',
+//	    scope                TEXT        DEFAULT 'api',
+//	    CONSTRAINT schwab_tokens_one_row CHECK (singleton)
+//	);
+//
+// This is useful when your application uses a migration tool and the database
+// user doesn't have CREATE TABLE permissions.
+func NewPostgresTokenStorageWithoutMigrate(db *sql.DB, table string) *PostgresTokenStorage {
+	return &PostgresTokenStorage{db: db, table: table}
+}
+
 // Load retrieves the token record from Postgres.
 // Returns (nil, nil) when no row exists yet (first run).
 func (s *PostgresTokenStorage) Load(ctx context.Context) (*TokenRecord, error) {
