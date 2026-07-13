@@ -279,14 +279,13 @@ func (tm *TokenManager) saveTokens(atIssued, rtIssued time.Time, tokenDict map[s
 func (tm *TokenManager) updateAccessToken() error {
 	tm.mu.RLock()
 	rt := tm.refreshToken
-	rtIssued := tm.refreshTokenIssued
 	tm.mu.RUnlock()
 
 	response, err := tm.postOAuthToken("refresh_token", rt)
 	if err != nil {
 		return err
 	}
-	return tm.saveTokens(time.Now().UTC(), rtIssued, response)
+	return tm.saveTokens(time.Now().UTC(), time.Now().UTC(), response)
 }
 
 func (tm *TokenManager) updateRefreshToken() error {

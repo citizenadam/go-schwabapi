@@ -82,3 +82,85 @@ const (
 	// EncryptionPrefix is the prefix added to encrypted token values
 	EncryptionPrefix = "enc:"
 )
+
+// Order Instruction Constants
+const (
+	// InstructionBuyToOpen is buying to open a position
+	InstructionBuyToOpen = "BUY_TO_OPEN"
+	// InstructionBuyToClose is buying to close a position
+	InstructionBuyToClose = "BUY_TO_CLOSE"
+	// InstructionSellToOpen is selling to open a position
+	InstructionSellToOpen = "SELL_TO_OPEN"
+	// InstructionSellToClose is selling to close a position
+	InstructionSellToClose = "SELL_TO_CLOSE"
+)
+
+// Order Position Effect Constants
+const (
+	// PositionEffectOpen opens a new position
+	PositionEffectOpen = "OPEN"
+	// PositionEffectClosed closes an existing position
+	PositionEffectClosed = "CLOSED"
+)
+
+// Complex Order Strategy Constants
+const (
+	// ComplexOrderStrategyButterfly is an Iron Butterfly spread
+	ComplexOrderStrategyButterfly = "IRON_BUTTERFLY"
+	// ComplexOrderStrategyVertical is a Vertical spread
+	ComplexOrderStrategyVertical = "VERTICAL"
+	// ComplexOrderStrategyCombo is a Combo spread
+	ComplexOrderStrategyCombo = "COMBO"
+	// ComplexOrderStrategyCovered is a Covered stock position
+	ComplexOrderStrategyCovered = "COVERED"
+)
+
+// Order Strategy Type Constants
+const (
+	// OrderStrategyTypeSingle is a single-leg order
+	OrderStrategyTypeSingle = "SINGLE"
+	// OrderStrategyTypeMultileg is a multi-leg order
+	OrderStrategyTypeMultileg = "MULTILEG"
+	// OrderStrategyTypeOco is one-cancels-other
+	OrderStrategyTypeOco = "OCO"
+	// OrderStrategyTypeRatio is a ratio spread
+	OrderStrategyTypeRatio = "RATIO"
+)
+
+// Order Duration Constants
+const (
+	// OrderDurationDay is good for the day only
+	OrderDurationDay = "DAY"
+	// OrderDurationGoodTillCancel is good until cancelled
+	OrderDurationGoodTillCancel = "GOOD_TILL_CANCEL"
+	// OrderDurationFillOrKill is immediate or cancel
+	OrderDurationFillOrKill = "FILL_OR_KILL"
+)
+
+// Order Session Constants
+const (
+	// OrderSessionNormal is the normal market session
+	OrderSessionNormal = "NORMAL"
+	// OrderSessionAM is the morning session
+	OrderSessionAM = "AM"
+	// OrderSessionPM is the afternoon session
+	OrderSessionPM = "PM"
+	// OrderSessionSExtended is extended hours
+	OrderSessionExtended = "SEXTENDED"
+)
+
+// Order Type Constants
+const (
+	// OrderTypeLimit is a limit order
+	OrderTypeLimit = "LIMIT"
+	// OrderTypeMarket is a market order
+	OrderTypeMarket = "MARKET"
+	// OrderTypeStop is a stop order
+	OrderTypeStop = "STOP"
+	// OrderTypeStopLimit is a stop-limit order
+	OrderTypeStopLimit = "STOP_LIMIT"
+	// OrderTypeNetDebit is a net debit (buy) order
+	OrderTypeNetDebit = "NET_DEBIT"
+	// OrderTypeNetCredit is a net credit (sell) order
+	OrderTypeNetCredit = "NET_CREDIT"
+)

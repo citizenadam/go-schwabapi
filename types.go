@@ -376,7 +376,7 @@ type Quote struct {
 	AssetMainType           string
 	AssetSubType            string
 	QuoteType               string
-	RealTime                bool
+	RealTime                bool `json:"realtime,omitempty"`
 	SSID                    int `json:"ssid"`
 	Symbol                  string
 	Hi52                    float64 `json:"52WeekHigh"`
@@ -407,6 +407,12 @@ type Quote struct {
 	SecurityStatus          string
 	TotalVolume             int
 	TradeTime               int
+
+	// Embedded for backward compatibility
+	*QuoteData
+	*Fundamental
+	*Reference
+	*Regular
 }
 
 // Fundamental represents fundamental data
@@ -683,17 +689,24 @@ type OrderRequest struct {
 	OrderStrategyType        string             `json:"orderStrategyType"`
 	Price                    string             `json:"price,omitempty"`
 	StopPrice                string             `json:"stopPrice,omitempty"`
-	OrderLegCollection       []*OrderLegRequest `json:"orderLegCollection"`
+	OrderLegCollection       []*OrderLegCollection `json:"orderLegCollection"`
 	ComplexOrderStrategyType string             `json:"complexOrderStrategyType,omitempty"`
 	Quantity                 float64            `json:"quantity,omitempty"`
 }
 
-// OrderLegRequest represents a leg in an order request
-type OrderLegRequest struct {
-	Instruction string             `json:"instruction"`
-	Quantity    int                `json:"quantity"`
-	Instrument  *InstrumentRequest `json:"instrument"`
+// OrderLegCollection represents a leg in a multi-leg order request.
+// This is used for complex strategies like Iron Butterfly, Vertical Spreads, etc.
+type OrderLegCollection struct {
+	OrderLegType      string           `json:"orderLegType,omitempty"`
+	Instruction    string           `json:"instruction"` // BUY_TO_OPEN, SELL_TO_OPEN, etc.
+	Quantity       float64          `json:"quantity"`
+	PositionEffect string          `json:"positionEffect,omitempty"` // OPEN, CLOSED
+	Instrument     *InstrumentRequest `json:"instrument"`
 }
+
+// OrderLegRequest is an alias for OrderLegCollection for single-leg orders.
+// Deprecated: Use OrderLegCollection for new code.
+type OrderLegRequest = OrderLegCollection
 
 // InstrumentRequest represents an instrument in an order request
 type InstrumentRequest struct {

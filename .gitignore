@@ -25,6 +25,10 @@ vendor/
 
 # Go workspace file
 go.work
+go.work.sum
+
+# Dependency directories (remove the comment below if it is preferred to vendor dependencies)
+ vendor/
 
 # Block Convereted Python Files from being committed to the repo.
 *.py
@@ -35,6 +39,10 @@ go.work
 __pycache__/
 .pytest_cache/
 
+# Project specific untracked directories
+.megamemory/
+.github/prompts/
+.github/skills/
 
 # IDE specific files
 .vscode/
@@ -58,3 +66,11 @@ coverage.out
 # Debug files
 debug
 __debug_bin
+
+# Project Documentation and Specs
+PROPOSAL.md
+SPEC.md
+TODO.md
+
+# Config and Specs directory
+openspec/

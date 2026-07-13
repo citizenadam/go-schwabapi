@@ -7,3 +7,5 @@ require (
 	github.com/fernet/fernet-go v0.0.0-20240119011108-303da6aec611
 	github.com/lib/pq v1.11.2
 )
+
+require golang.org/x/sync v0.20.0 // indirect
