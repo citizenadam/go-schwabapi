@@ -334,15 +334,54 @@ type FeeValue struct {
 // TransactionsResponse is the response for GET /trader/v1/accounts/{accountHash}/transactions
 type TransactionsResponse []Transaction
 
-// Transaction represents a transaction
+// Transaction represents a transaction in an account's history.
+// The Schwab API returns different subsets of fields depending on the transaction
+// type (TRADE vs DIVIDEND_OR_INTEREST vs ACH_RECEIPT, etc.), so most fields are
+// optional (pointer types or omitempty).
 type Transaction struct {
-	TransactionID string  `json:"transactionId"`
-	Type          string  `json:"type"`
-	Symbol        string  `json:"symbol"`
-	Date          string  `json:"date"`
-	Quantity      float64 `json:"quantity"`
-	Price         float64 `json:"price"`
-	NetAmount     float64 `json:"netAmount"`
+	TransactionID    string  `json:"transactionId"`
+	Type             string  `json:"type"`
+	Symbol           string  `json:"symbol,omitempty"`
+	Date             string  `json:"date"`
+	Quantity         float64 `json:"quantity,omitempty"`
+	Price            float64 `json:"price,omitempty"`
+	NetAmount        float64 `json:"netAmount,omitempty"`
+	CashBalanceFlag  string  `json:"cashBalanceFlag,omitempty"`
+	TransactionItem  []*TransactionItem `json:"transactionItem,omitempty"`
+
+	// Additional fields returned for TRADE and other transaction types
+	Description      string  `json:"description,omitempty"`
+	Instruction       string  `json:"instruction,omitempty"`
+	PositionEffect   string  `json:"positionEffect,omitempty"`
+	AssetType         string  `json:"assetType,omitempty"`
+	OrderID           string  `json:"orderId,omitempty"`
+	BatchID           string  `json:"batchId,omitempty"`
+	Amount            float64 `json:"amount,omitempty"`
+	SettlementDate    string  `json:"settlementDate,omitempty"`
+	Source            string  `json:"source,omitempty"`
+}
+
+// TransactionItem represents a line item within a transaction.
+// Multi-leg transactions (e.g. option assignments) return multiple items.
+type TransactionItem struct {
+	TransactionItemID string            `json:"transactionItemId,omitempty"`
+	Amount            float64           `json:"amount,omitempty"`
+	Price             float64           `json:"price,omitempty"`
+	Quantity          float64           `json:"quantity,omitempty"`
+	Fees              *TransactionFees  `json:"fees,omitempty"`
+	Instrument        *Instrument       `json:"instrument,omitempty"`
+	PositionEffect     string            `json:"positionEffect,omitempty"`
+	Instruction         string            `json:"instruction,omitempty"`
+	CostPerShare       float64           `json:"costPerShare,omitempty"`
+}
+
+// TransactionFees represents fees associated with a transaction item.
+type TransactionFees struct {
+	SEC          float64 `json:"secFee,omitempty"`
+	TAF          float64 `json:"tafFee,omitempty"`
+	Commission   float64 `json:"commission,omitempty"`
+	Additional   float64 `json:"additionalFee,omitempty"`
+	OptRegFee    float64 `json:"optRegFee,omitempty"`
 }
 
 // TransactionDetailsResponse is the response for GET /trader/v1/accounts/{accountHash}/transactions/{transactionId}

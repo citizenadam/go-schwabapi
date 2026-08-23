@@ -85,6 +85,10 @@ const (
 
 // Order Instruction Constants
 const (
+	// InstructionBuy is a standard buy order (equities)
+	InstructionBuy = "BUY"
+	// InstructionSell is a standard sell order (equities)
+	InstructionSell = "SELL"
 	// InstructionBuyToOpen is buying to open a position
 	InstructionBuyToOpen = "BUY_TO_OPEN"
 	// InstructionBuyToClose is buying to close a position
@@ -93,6 +97,12 @@ const (
 	InstructionSellToOpen = "SELL_TO_OPEN"
 	// InstructionSellToClose is selling to close a position
 	InstructionSellToClose = "SELL_TO_CLOSE"
+	// InstructionSellShort is selling short
+	InstructionSellShort = "SELL_SHORT"
+	// InstructionBuyToCover is buying to cover a short position
+	InstructionBuyToCover = "BUY_TO_COVER"
+	// InstructionExchange is for exchange-specific instructions
+	InstructionExchange = "EXCHANGE"
 )
 
 // Order Position Effect Constants
@@ -105,6 +115,8 @@ const (
 
 // Complex Order Strategy Constants
 const (
+	// ComplexOrderStrategyNone is no complex strategy (single-leg default)
+	ComplexOrderStrategyNone = "NONE"
 	// ComplexOrderStrategyButterfly is an Iron Butterfly spread
 	ComplexOrderStrategyButterfly = "IRON_BUTTERFLY"
 	// ComplexOrderStrategyVertical is a Vertical spread
@@ -113,6 +125,24 @@ const (
 	ComplexOrderStrategyCombo = "COMBO"
 	// ComplexOrderStrategyCovered is a Covered stock position
 	ComplexOrderStrategyCovered = "COVERED"
+	// ComplexOrderStrategyCondor is a Condor spread
+	ComplexOrderStrategyCondor = "CONDOR"
+	// ComplexOrderStrategyCollarSynthetic is a Collar Synthetic spread
+	ComplexOrderStrategyCollarSynthetic = "COLLAR_SYNTHETIC"
+	// ComplexOrderStrategyDiagonal is a Diagonal spread
+	ComplexOrderStrategyDiagonal = "DIAGONAL"
+	// ComplexOrderStrategyRoll is a Roll strategy
+	ComplexOrderStrategyRoll = "ROLL"
+	// ComplexOrderStrategyStraddle is a Straddle
+	ComplexOrderStrategyStraddle = "STRADDLE"
+	// ComplexOrderStrategyStrangle is a Strangle
+	ComplexOrderStrategyStrangle = "STRANGLE"
+	// ComplexOrderStrategyBackspread is a Backspread
+	ComplexOrderStrategyBackspread = "BACKSPREAD"
+	// ComplexOrderStrategyCalendar is a Calendar spread
+	ComplexOrderStrategyCalendar = "CALENDAR"
+	// ComplexOrderStrategyCustom is a Custom strategy
+	ComplexOrderStrategyCustom = "CUSTOM"
 )
 
 // Order Strategy Type Constants
@@ -123,6 +153,8 @@ const (
 	OrderStrategyTypeMultileg = "MULTILEG"
 	// OrderStrategyTypeOco is one-cancels-other
 	OrderStrategyTypeOco = "OCO"
+	// OrderStrategyTypeTrigger is a trigger order
+	OrderStrategyTypeTrigger = "TRIGGER"
 	// OrderStrategyTypeRatio is a ratio spread
 	OrderStrategyTypeRatio = "RATIO"
 )
@@ -145,8 +177,8 @@ const (
 	OrderSessionAM = "AM"
 	// OrderSessionPM is the afternoon session
 	OrderSessionPM = "PM"
-	// OrderSessionSExtended is extended hours
-	OrderSessionExtended = "SEXTENDED"
+	// OrderSessionSeamless is the seamless/extended hours session
+	OrderSessionSeamless = "SEAMLESS"
 )
 
 // Order Type Constants
@@ -159,8 +191,90 @@ const (
 	OrderTypeStop = "STOP"
 	// OrderTypeStopLimit is a stop-limit order
 	OrderTypeStopLimit = "STOP_LIMIT"
+	// OrderTypeTrailingStop is a trailing stop order
+	OrderTypeTrailingStop = "TRAILING_STOP"
+	// OrderTypeMarketOnClose is a market on close order
+	OrderTypeMarketOnClose = "MARKET_ON_CLOSE"
+	// OrderTypeExercise is an exercise order
+	OrderTypeExercise = "EXERCISE"
+	// OrderTypeTrailingStopLimit is a trailing stop limit order
+	OrderTypeTrailingStopLimit = "TRAILING_STOP_LIMIT"
 	// OrderTypeNetDebit is a net debit (buy) order
 	OrderTypeNetDebit = "NET_DEBIT"
 	// OrderTypeNetCredit is a net credit (sell) order
 	OrderTypeNetCredit = "NET_CREDIT"
+	// OrderTypeNetZero is a net zero (even) order
+	OrderTypeNetZero = "NET_ZERO"
+)
+
+// Asset Type Constants
+const (
+	AssetTypeEquity      = "EQUITY"
+	AssetTypeOption      = "OPTION"
+	AssetTypeIndex       = "INDEX"
+	AssetTypeMutualFund  = "MUTUAL_FUND"
+	AssetTypeFixedIncome = "FIXED_INCOME"
+	AssetTypeCurrency    = "CURRENCY"
+)
+
+// Order Status Constants
+const (
+	OrderStatusAwaitingParentOrder   = "AWAITING_PARENT_ORDER"
+	OrderStatusAwaitingCondition     = "AWAITING_CONDITION"
+	OrderStatusAwaitingManualReview  = "AWAITING_MANUAL_REVIEW"
+	OrderStatusAccepted               = "ACCEPTED"
+	OrderStatusAwaitingURouting      = "AWAITING_UR_OUT"
+	OrderStatusPendingActivation      = "PENDING_ACTIVATION"
+	OrderStatusQueued                 = "QUEUED"
+	OrderStatusWorking                 = "WORKING"
+	OrderStatusRejected                = "REJECTED"
+	OrderStatusPendingCancel           = "PENDING_CANCEL"
+	OrderStatusCanceled                = "CANCELED"
+	OrderStatusPendingReplace           = "PENDING_REPLACE"
+	OrderStatusReplaced                 = "REPLACED"
+	OrderStatusFilled                  = "FILLED"
+	OrderStatusExpired                  = "EXPIRED"
+)
+
+// Transaction Type Constants
+const (
+	TransactionTypeTrade              = "TRADE"
+	TransactionTypeReceiveAndDeliver  = "RECEIVE_AND_DELIVER"
+	TransactionTypeDividendOrInterest = "DIVIDEND_OR_INTEREST"
+	TransactionTypeACHReceipt         = "ACH_RECEIPT"
+	TransactionTypeACHDisbursement    = "ACH_DISBURSEMENT"
+	TransactionTypeCashReceipt        = "CASH_RECEIPT"
+	TransactionTypeCashDisbursement   = "CASH_DISBURSEMENT"
+	TransactionTypeElectronicFund     = "ELECTRONIC_FUND"
+	TransactionTypeWireOut             = "WIRE_OUT"
+	TransactionTypeWireIn              = "WIRE_IN"
+	TransactionTypeJournal             = "JOURNAL"
+	TransactionTypeMemoEntry           = "MEMO_ENTRY"
+	TransactionTypeMoneyMarket         = "MONEY_MARKET"
+	TransactionTypeSmawMaintenance     = "SMA_MAINTENANCE"
+)
+
+// Market ID Constants (for /marketdata/v1/markets/{market_id})
+const (
+	MarketIDEquity = "equity"
+	MarketIDOption = "option"
+	MarketIDBond   = "bond"
+	MarketIDFuture = "future"
+	MarketIDForex  = "forex"
+)
+
+// Option Chain Contract Type Constants
+const (
+	ContractTypeCall = "CALL"
+	ContractTypePut  = "PUT"
+	ContractTypeAll  = "ALL"
+)
+
+// Instrument Projection Constants
+const (
+	ProjectionSymbolSearch = "symbol-search"
+	ProjectionSymbolRegex   = "symbol-regex"
+	ProjectionDescSearch   = "desc-search"
+	ProjectionDescRegex     = "desc-regex"
+	ProjectionFundamental   = "fundamental"
 )

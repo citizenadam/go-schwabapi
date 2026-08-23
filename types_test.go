@@ -359,8 +359,8 @@ func TestQuote_RoundTrip(t *testing.T) {
 		AssetMainType: "EQUITY",
 		AssetSubType:  "COE",
 		Symbol:        "AAPL",
-		Realtime:      true,
-		Ssid:          1234567890,
+		RealTime:      true,
+		SSID:          1234567890,
 		QuoteData: &schwabdev.QuoteData{
 			AskPrice:         182.50,
 			BidPrice:         182.48,
@@ -427,28 +427,25 @@ func TestQuotesResponse_UnmarshalFromAPI(t *testing.T) {
 			"symbol": "AAPL",
 			"realtime": true,
 			"ssid": 1001,
-			"quote": {
-				"askPrice": 182.50,
-				"bidPrice": 182.45,
-				"lastPrice": 182.48,
-				"totalVolume": 40000000,
-				"closePrice": 180.00,
-				"highPrice": 183.00,
-				"lowPrice": 181.00,
-				"openPrice": 181.50,
-				"netChange": 2.48,
-				"netPercentChange": 1.38,
-				"mark": 182.48,
-				"securityStatus": "Normal"
-			}
+			"askPrice": 182.50,
+			"bidPrice": 182.45,
+			"lastPrice": 182.48,
+			"totalVolume": 40000000,
+			"closePrice": 180.00,
+			"highPrice": 183.00,
+			"lowPrice": 181.00,
+			"openPrice": 181.50,
+			"netChange": 2.48,
+			"netPercentChange": 1.38,
+			"mark": 182.48,
+			"securityStatus": "Normal"
 		},
 		"MSFT": {
 			"assetMainType": "EQUITY",
 			"symbol": "MSFT",
 			"realtime": true,
 			"ssid": 1002,
-			"quote": {
-				"askPrice": 415.00,
+			"askPrice": 415.00,
 				"bidPrice": 414.95,
 				"lastPrice": 414.98,
 				"totalVolume": 20000000,
@@ -460,7 +457,6 @@ func TestQuotesResponse_UnmarshalFromAPI(t *testing.T) {
 				"netPercentChange": 1.21,
 				"mark": 414.98,
 				"securityStatus": "Normal"
-			}
 		}
 	}`
 	got := mustUnmarshal[schwabdev.QuotesResponse](t, raw)
