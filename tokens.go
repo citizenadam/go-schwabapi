@@ -46,6 +46,10 @@ type TokenManager struct {
 	refreshTokenIssued  time.Time
 	accessTokenTimeout  time.Duration
 	refreshTokenTimeout time.Duration
+
+	// oauthTokenURL is the endpoint for OAuth token grants. Defaults to
+	// OAuthTokenEndpoint; overridable in tests via an httptest.Server.
+	oauthTokenURL string
 }
 
 // NewTokenManager creates a TokenManager using a caller-supplied TokenStorage.
@@ -70,6 +74,7 @@ func NewTokenManager(
 		callOnAuth:          callOnAuth,
 		accessTokenTimeout:  AccessTokenValidity,
 		refreshTokenTimeout: RefreshTokenValidity,
+		oauthTokenURL:       OAuthTokenEndpoint,
 	}
 
 	if encryption != "" {
@@ -105,6 +110,13 @@ func NewTokenManagerWithFilePath(
 // Close releases resources held by the storage backend.
 func (tm *TokenManager) Close() error {
 	return tm.storage.Close()
+}
+
+// Reload forces the TokenManager to reload its state from storage.
+// Use after manually saving new tokens to the DB (e.g. after re-auth)
+// to synchronize the in-memory state without triggering a token refresh.
+func (tm *TokenManager) Reload() error {
+	return tm.loadFromStorage()
 }
 
 // AccessToken returns a guaranteed-fresh access token, refreshing it first if
@@ -279,13 +291,19 @@ func (tm *TokenManager) saveTokens(atIssued, rtIssued time.Time, tokenDict map[s
 func (tm *TokenManager) updateAccessToken() error {
 	tm.mu.RLock()
 	rt := tm.refreshToken
+	// Preserve the original refresh-token acquisition anchor. Schwab refresh
+	// tokens are valid for 7 days from acquisition and are NOT extended by
+	// access-token refreshes. Re-stamping refreshTokenIssued here would make
+	// TokenInfo().RefreshTokenExpiry perpetually reset to ~7 days, keeping the
+	// UI stuck at "6d 23h" and disabling the near-expiry re-auth warning.
+	rtIssued := tm.refreshTokenIssued
 	tm.mu.RUnlock()
 
 	response, err := tm.postOAuthToken("refresh_token", rt)
 	if err != nil {
 		return err
 	}
-	return tm.saveTokens(time.Now().UTC(), time.Now().UTC(), response)
+	return tm.saveTokens(time.Now().UTC(), rtIssued, response)
 }
 
 func (tm *TokenManager) updateRefreshToken() error {
@@ -347,7 +365,7 @@ func (tm *TokenManager) postOAuthToken(grantType, code string) (map[string]any, 
 	}
 
 	req, err := http.NewRequest(http.MethodPost,
-		"https://api.schwabapi.com/v1/oauth/token",
+		tm.oauthTokenURL,
 		strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err

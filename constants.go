@@ -13,6 +13,11 @@ const (
 
 // Token Management Constants
 const (
+	// OAuthTokenEndpoint is the Schwab OAuth token endpoint. TokenManager
+	// posts authorization_code and refresh_token grants here. Tests may point
+	// a TokenManager's unexported oauthTokenURL field at a local server.
+	OAuthTokenEndpoint = "https://api.schwabapi.com/v1/oauth/token"
+
 	// AccessTokenValidity is the validity period for access tokens (30 minutes)
 	AccessTokenValidity = 1800 * time.Second
 
