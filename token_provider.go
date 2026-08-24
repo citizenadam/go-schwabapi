@@ -26,7 +26,7 @@ type TokenSource interface {
 
 // Token represents OAuth tokens with expiry metadata.
 type Token struct {
-	AccessToken   string
+	AccessToken  string
 	RefreshToken string
 	ExpiresAt    time.Time
 }

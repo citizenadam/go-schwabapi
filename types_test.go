@@ -74,31 +74,17 @@ func TestAccountDetailsAllResponse_RoundTrip(t *testing.T) {
 			AccountNumber: "ACC001",
 			RoundTrips:    2,
 			IsDayTrader:   false,
-			InitialBalances: &schwabdev.InitialBalances{
-				CashBalance:      10000.50,
-				BuyingPower:      20000.00,
-				AccountValue:     35000.75,
-				LiquidationValue: 34000.00,
-			},
-			CurrentBalances: &schwabdev.CurrentBalances{
-				CashBalance:      9500.00,
-				BuyingPower:      19000.00,
-				LiquidationValue: 33500.00,
-				Equity:           33500.00,
-			},
-			ProjectedBalances: &schwabdev.ProjectedBalances{
-				BuyingPower:    18500.00,
-				AvailableFunds: 9000.00,
-			},
 			Positions: []*schwabdev.Position{
 				{
-					Symbol:       "AAPL",
 					LongQuantity: 100,
 					AveragePrice: 150.25,
 					MarketValue:  17500.00,
-					AssetType:    "EQUITY",
-					Cusip:        "037833100",
-					InstrumentID: 1234567,
+					Instrument: &schwabdev.Instrument{
+						Symbol:       "AAPL",
+						AssetType:    "EQUITY",
+						Cusip:        "037833100",
+						InstrumentID: 1234567,
+					},
 				},
 			},
 		},
@@ -117,8 +103,11 @@ func TestAccountDetailsAllResponse_RoundTrip(t *testing.T) {
 	if len(got.SecuritiesAccount.Positions) != 1 {
 		t.Fatalf("want 1 position, got %d", len(got.SecuritiesAccount.Positions))
 	}
-	if got.SecuritiesAccount.Positions[0].Symbol != "AAPL" {
-		t.Errorf("Position symbol: want AAPL, got %s", got.SecuritiesAccount.Positions[0].Symbol)
+	if got.SecuritiesAccount.Positions[0].Instrument == nil {
+		t.Fatal("Position instrument is nil")
+	}
+	if got.SecuritiesAccount.Positions[0].Instrument.Symbol != "AAPL" {
+		t.Errorf("Position symbol: want AAPL, got %s", got.SecuritiesAccount.Positions[0].Instrument.Symbol)
 	}
 	if got.AggregatedBalance == nil {
 		t.Fatal("AggregatedBalance is nil after roundtrip")
@@ -149,11 +138,8 @@ func TestAccountDetailsAllResponse_UnmarshalFromAPI(t *testing.T) {
 	if got.SecuritiesAccount.AccountNumber != "ACCT123" {
 		t.Errorf("want ACCT123, got %s", got.SecuritiesAccount.AccountNumber)
 	}
-	if got.SecuritiesAccount.CurrentBalances == nil {
-		t.Fatal("CurrentBalances unexpectedly nil")
-	}
-	if got.SecuritiesAccount.CurrentBalances.CashBalance != 5000.00 {
-		t.Errorf("CashBalance: want 5000.00, got %f", got.SecuritiesAccount.CurrentBalances.CashBalance)
+	if len(got.SecuritiesAccount.CurrentBalances) == 0 {
+		t.Fatal("CurrentBalances unexpectedly empty")
 	}
 }
 
@@ -161,11 +147,11 @@ func TestAccountDetailsAllResponse_NilOptionals(t *testing.T) {
 	// Ensure optional pointer fields decode as nil when absent.
 	raw := `{"securitiesAccount": {"type": "CASH", "accountNumber": "X", "roundTrips": 0}}`
 	got := mustUnmarshal[schwabdev.AccountDetailsAllResponse](t, raw)
-	if got.SecuritiesAccount.InitialBalances != nil {
-		t.Error("InitialBalances should be nil when absent")
+	if len(got.SecuritiesAccount.InitialBalances) != 0 {
+		t.Error("InitialBalances should be empty when absent")
 	}
-	if got.SecuritiesAccount.Positions != nil {
-		t.Error("Positions should be nil when absent")
+	if len(got.SecuritiesAccount.Positions) != 0 {
+		t.Error("Positions should be empty when absent")
 	}
 	if got.AggregatedBalance != nil {
 		t.Error("AggregatedBalance should be nil when absent")
@@ -194,7 +180,7 @@ func TestOrder_RoundTrip(t *testing.T) {
 		EnteredTime:              "2024-01-15T10:30:00+0000",
 		Tag:                      &tag,
 		AccountNumber:            111222333,
-		OrderLegCollection: []*schwabdev.OrderLeg{
+		OrderLegCollection: []*schwabdev.OrderLegCollection{
 			{
 				OrderLegType: "EQUITY",
 				LegID:        1,
@@ -211,7 +197,6 @@ func TestOrder_RoundTrip(t *testing.T) {
 		OrderActivityCollection: []*schwabdev.OrderActivity{
 			{
 				ActivityType:           "EXECUTION",
-				ActivityID:             111,
 				ExecutionType:          "FILL",
 				Quantity:               10,
 				OrderRemainingQuantity: 0,
@@ -318,17 +303,15 @@ func TestAccountOrdersResponse_RoundTrip(t *testing.T) {
 
 func TestTransaction_RoundTrip(t *testing.T) {
 	input := schwabdev.Transaction{
-		TransactionID: "TXN-001",
+		ActivityID:    12345,
 		Type:          "TRADE",
-		Symbol:        "GOOGL",
-		Date:          "2024-03-15",
-		Quantity:      5,
-		Price:         175.30,
+		Description:   "Bought 5 GOOGL @ 175.30",
+		AccountNumber: "ACC123",
 		NetAmount:     876.50,
 	}
 	got := roundtrip(t, input)
-	if got.TransactionID != "TXN-001" {
-		t.Errorf("TransactionID: want TXN-001, got %s", got.TransactionID)
+	if got.ActivityID != 12345 {
+		t.Errorf("ActivityID: want 12345, got %d", got.ActivityID)
 	}
 	if got.NetAmount != 876.50 {
 		t.Errorf("NetAmount: want 876.50, got %f", got.NetAmount)
@@ -337,15 +320,15 @@ func TestTransaction_RoundTrip(t *testing.T) {
 
 func TestTransactionsResponse_UnmarshalFromAPI(t *testing.T) {
 	raw := `[
-		{"transactionId": "T1", "type": "TRADE", "symbol": "NVDA", "date": "2024-01-10", "quantity": 10, "price": 500.00, "netAmount": -5001.50},
-		{"transactionId": "T2", "type": "DIVIDEND", "symbol": "MSFT", "date": "2024-01-12", "quantity": 0, "price": 0, "netAmount": 25.00}
+		{"activityId": 1, "type": "TRADE", "description": "NVDA trade", "netAmount": -5001.50},
+		{"activityId": 2, "type": "DIVIDEND_OR_INTEREST", "description": "MSFT div", "netAmount": 25.00}
 	]`
 	got := mustUnmarshal[schwabdev.TransactionsResponse](t, raw)
 	if len(got) != 2 {
 		t.Fatalf("want 2, got %d", len(got))
 	}
-	if got[0].Symbol != "NVDA" {
-		t.Errorf("want NVDA, got %s", got[0].Symbol)
+	if got[0].Type != "TRADE" {
+		t.Errorf("want TRADE, got %s", got[0].Type)
 	}
 	if got[1].NetAmount != 25.00 {
 		t.Errorf("want 25.00, got %f", got[1].NetAmount)
@@ -374,6 +357,7 @@ func TestQuote_RoundTrip(t *testing.T) {
 			NetPercentChange: 0.96,
 			Mark:             182.49,
 			SecurityStatus:   "Normal",
+			Volatility:        25.5,
 		},
 		Fundamental: &schwabdev.Fundamental{
 			PeRatio:         28.5,
@@ -381,6 +365,7 @@ func TestQuote_RoundTrip(t *testing.T) {
 			DivYield:        0.54,
 			DivAmount:       0.96,
 			Avg10DaysVolume: 55000000,
+			FundStrategy:    "A",
 		},
 		Reference: &schwabdev.Reference{
 			Cusip:        "037833100",
@@ -406,11 +391,17 @@ func TestQuote_RoundTrip(t *testing.T) {
 	if got.QuoteData.AskPrice != 182.50 {
 		t.Errorf("AskPrice: want 182.50, got %f", got.QuoteData.AskPrice)
 	}
+	if got.QuoteData.Volatility != 25.5 {
+		t.Errorf("Volatility: want 25.5, got %f", got.QuoteData.Volatility)
+	}
 	if got.Fundamental == nil {
 		t.Fatal("Fundamental is nil after roundtrip")
 	}
 	if got.Fundamental.PeRatio != 28.5 {
 		t.Errorf("PeRatio: want 28.5, got %f", got.Fundamental.PeRatio)
+	}
+	if got.Fundamental.FundStrategy != "A" {
+		t.Errorf("FundStrategy: want A, got %s", got.Fundamental.FundStrategy)
 	}
 	if got.Reference == nil {
 		t.Fatal("Reference is nil after roundtrip")
@@ -438,7 +429,8 @@ func TestQuotesResponse_UnmarshalFromAPI(t *testing.T) {
 			"netChange": 2.48,
 			"netPercentChange": 1.38,
 			"mark": 182.48,
-			"securityStatus": "Normal"
+			"securityStatus": "Normal",
+			"volatility": 22.5
 		},
 		"MSFT": {
 			"assetMainType": "EQUITY",
@@ -446,17 +438,17 @@ func TestQuotesResponse_UnmarshalFromAPI(t *testing.T) {
 			"realtime": true,
 			"ssid": 1002,
 			"askPrice": 415.00,
-				"bidPrice": 414.95,
-				"lastPrice": 414.98,
-				"totalVolume": 20000000,
-				"closePrice": 410.00,
-				"highPrice": 416.00,
-				"lowPrice": 413.00,
-				"openPrice": 413.50,
-				"netChange": 4.98,
-				"netPercentChange": 1.21,
-				"mark": 414.98,
-				"securityStatus": "Normal"
+			"bidPrice": 414.95,
+			"lastPrice": 414.98,
+			"totalVolume": 20000000,
+			"closePrice": 410.00,
+			"highPrice": 416.00,
+			"lowPrice": 413.00,
+			"openPrice": 413.50,
+			"netChange": 4.98,
+			"netPercentChange": 1.21,
+			"mark": 414.98,
+			"securityStatus": "Normal"
 		}
 	}`
 	got := mustUnmarshal[schwabdev.QuotesResponse](t, raw)
@@ -472,6 +464,9 @@ func TestQuotesResponse_UnmarshalFromAPI(t *testing.T) {
 	}
 	if aapl.QuoteData.AskPrice != 182.50 {
 		t.Errorf("AAPL AskPrice: want 182.50, got %f", aapl.QuoteData.AskPrice)
+	}
+	if aapl.QuoteData.Volatility != 22.5 {
+		t.Errorf("AAPL Volatility: want 22.5, got %f", aapl.QuoteData.Volatility)
 	}
 	msft := got["MSFT"]
 	if msft.QuoteData.LastPrice != 414.98 {
@@ -491,19 +486,50 @@ func TestQuoteData_52WeekFieldNames(t *testing.T) {
 	}
 }
 
+func TestQuote_WithExtendedMarket(t *testing.T) {
+	// Verify that the Extended field decodes as ExtendedMarket (not bool).
+	raw := `{
+		"assetMainType": "EQUITY",
+		"symbol": "AAPL",
+		"realtime": true,
+		"ssid": 1001,
+		"extended": {
+			"askPrice": 182.55,
+			"askSize": 500,
+			"bidPrice": 182.50,
+			"bidSize": 300,
+			"lastPrice": 182.52,
+			"lastSize": 100,
+			"mark": 182.51,
+			"quoteTime": 1700000000000,
+			"totalVolume": 5000000,
+			"tradeTime": 1700000001000
+		}
+	}`
+	got := mustUnmarshal[schwabdev.Quote](t, raw)
+	if got.Extended == nil {
+		t.Fatal("Extended is nil after unmarshal")
+	}
+	if got.Extended.AskPrice != 182.55 {
+		t.Errorf("Extended AskPrice: want 182.55, got %f", got.Extended.AskPrice)
+	}
+	if got.Extended.BidSize != 300 {
+		t.Errorf("Extended BidSize: want 300, got %d", got.Extended.BidSize)
+	}
+}
+
 // ── Option Chains ─────────────────────────────────────────────────────────────
 
 func TestOptionChainsResponse_RoundTrip(t *testing.T) {
 	input := schwabdev.OptionChainsResponse{
-		Symbol:            "SPY",
-		Status:            "SUCCESS",
-		Strategy:          "SINGLE",
-		IsDelayed:         false,
-		IsIndex:           false,
-		InterestRate:      5.25,
-		UnderlyingPrice:   450.75,
-		Volatility:        15.5,
-		NumberOfContracts: 200,
+		Symbol:          "SPY",
+		Status:          "SUCCESS",
+		Strategy:        "SINGLE",
+		IsDelayed:       false,
+		IsIndex:         false,
+		InterestRate:    5.25,
+		UnderlyingPrice: 450.75,
+		Volatility:      15.5,
 		CallExpDateMap: map[string]map[string][]schwabdev.OptionContract{
 			"2024-01-19:4": {
 				"450.0": {
@@ -511,10 +537,10 @@ func TestOptionChainsResponse_RoundTrip(t *testing.T) {
 						PutCall:          "CALL",
 						Symbol:           "SPY   240119C00450000",
 						Description:      "SPY Jan 19 2024 450 Call",
-						Bid:              3.50,
-						Ask:              3.55,
-						Last:             3.52,
-						Mark:             3.525,
+						BidPrice:         3.50,
+						AskPrice:         3.55,
+						LastPrice:        3.52,
+						MarkPrice:        3.525,
 						Delta:            0.52,
 						Gamma:            0.03,
 						Theta:            -0.15,
@@ -524,7 +550,6 @@ func TestOptionChainsResponse_RoundTrip(t *testing.T) {
 						DaysToExpiration: 4,
 						OpenInterest:     15000,
 						TotalVolume:      5000,
-						InTheMoney:       true,
 					},
 				},
 			},
@@ -545,9 +570,6 @@ func TestOptionChainsResponse_RoundTrip(t *testing.T) {
 	}
 	if contracts[0].Delta != 0.52 {
 		t.Errorf("Delta: want 0.52, got %f", contracts[0].Delta)
-	}
-	if !contracts[0].InTheMoney {
-		t.Error("InTheMoney should be true")
 	}
 }
 
@@ -571,10 +593,10 @@ func TestOptionChainsResponse_UnmarshalFromAPI(t *testing.T) {
 						"putCall": "CALL",
 						"symbol": "AAPL  240216C00185000",
 						"description": "AAPL Feb 16 2024 185 Call",
-						"bid": 2.10,
-						"ask": 2.15,
-						"last": 2.12,
-						"mark": 2.125,
+						"bidPrice": 2.10,
+						"askPrice": 2.15,
+						"lastPrice": 2.12,
+						"markPrice": 2.125,
 						"strikePrice": 185.0,
 						"expirationDate": "2024-02-16T00:00:00.000+0000",
 						"daysToExpiration": 32,
@@ -608,14 +630,14 @@ func TestOptionExpirationChainResponse_RoundTrip(t *testing.T) {
 	input := schwabdev.OptionExpirationChainResponse{
 		ExpirationList: []*schwabdev.ExpirationDate{
 			{
-				ExpirationDate:   "2024-01-19",
+				Expiration:       "2024-01-19",
 				DaysToExpiration: 4,
 				ExpirationType:   "W",
 				SettlementType:   "P",
 				Standard:         true,
 			},
 			{
-				ExpirationDate:   "2024-02-16",
+				Expiration:       "2024-02-16",
 				DaysToExpiration: 32,
 				ExpirationType:   "R",
 				SettlementType:   "P",
@@ -629,6 +651,15 @@ func TestOptionExpirationChainResponse_RoundTrip(t *testing.T) {
 	}
 	if got.ExpirationList[0].DaysToExpiration != 4 {
 		t.Errorf("DaysToExpiration: want 4, got %d", got.ExpirationList[0].DaysToExpiration)
+	}
+}
+
+func TestExpirationDate_OptionRootsString(t *testing.T) {
+	// Verify that optionRoots is a string (per OpenAPI spec), not an array.
+	raw := `{"expiration": "2024-01-19", "optionRoots": "AAPL,GOOGL"}`
+	got := mustUnmarshal[schwabdev.ExpirationDate](t, raw)
+	if got.OptionRoots != "AAPL,GOOGL" {
+		t.Errorf("OptionRoots: want 'AAPL,GOOGL', got %s", got.OptionRoots)
 	}
 }
 
@@ -693,22 +724,41 @@ func TestPriceHistoryResponse_Empty(t *testing.T) {
 	}
 }
 
+func TestPriceHistoryResponse_PreviousCloseDateInt64(t *testing.T) {
+	// Verify that previousCloseDate is int64 (per OpenAPI CandleList spec).
+	raw := `{
+		"candles": [],
+		"symbol": "AAPL",
+		"empty": false,
+		"previousClose": 182.50,
+		"previousCloseDate": 1705180800000,
+		"previousCloseDateISO8601": "2024-01-14"
+	}`
+	got := mustUnmarshal[schwabdev.PriceHistoryResponse](t, raw)
+	if got.PreviousClose != 182.50 {
+		t.Errorf("PreviousClose: want 182.50, got %f", got.PreviousClose)
+	}
+	if got.PreviousCloseDate != 1705180800000 {
+		t.Errorf("PreviousCloseDate: want 1705180800000, got %d", got.PreviousCloseDate)
+	}
+}
+
 // ── Movers ────────────────────────────────────────────────────────────────────
 
 func TestMoversResponse_RoundTrip(t *testing.T) {
 	input := schwabdev.MoversResponse{
-		{Symbol: "NVDA", Description: "NVIDIA Corp", LastPrice: 650.00, Change: 25.50, PercentChange: 4.08, Volume: 45000000},
-		{Symbol: "AMD", Description: "Adv Micro Devices", LastPrice: 180.00, Change: -3.20, PercentChange: -1.75, Volume: 30000000},
+		{Symbol: "NVDA", Description: "NVIDIA Corp", LastPrice: 650.00, Change: 25.50, TotalVolume: 45000000},
+		{Symbol: "AMD", Description: "Adv Micro Devices", LastPrice: 180.00, Change: -3.20, TotalVolume: 30000000},
 	}
 	got := roundtrip(t, input)
 	if len(got) != 2 {
 		t.Fatalf("want 2 movers, got %d", len(got))
 	}
-	if got[0].PercentChange != 4.08 {
-		t.Errorf("PercentChange: want 4.08, got %f", got[0].PercentChange)
+	if got[0].Change != 25.50 {
+		t.Errorf("Change: want 25.50, got %f", got[0].Change)
 	}
-	if got[1].Change != -3.20 {
-		t.Errorf("Change: want -3.20, got %f", got[1].Change)
+	if got[1].TotalVolume != 30000000 {
+		t.Errorf("TotalVolume: want 30000000, got %d", got[1].TotalVolume)
 	}
 }
 
@@ -725,8 +775,8 @@ func TestMarketHoursResponse_RoundTrip(t *testing.T) {
 			Product:     "EQO",
 			ProductName: "equity",
 			SessionHours: &schwabdev.SessionHours{
-				SessionDuration: []*schwabdev.SessionDuration{
-					{StartDateTime: "2024-01-15T09:30:00-05:00", EndDateTime: "2024-01-15T16:00:00-05:00"},
+				RegularMarket: []*schwabdev.Interval{
+					{Start: "2024-01-15T09:30:00-05:00", End: "2024-01-15T16:00:00-05:00"},
 				},
 			},
 		},
@@ -803,22 +853,112 @@ func TestInstrumentsResponse_RoundTrip(t *testing.T) {
 
 func TestInstrumentCUSIPResponse_RoundTrip(t *testing.T) {
 	input := schwabdev.InstrumentCUSIPResponse{
-		Instruments: []*schwabdev.InstrumentCUSIP{
-			{
-				Cusip:       "037833100",
-				Symbol:      "AAPL",
-				Description: "Apple Inc",
-				Exchange:    "NASDAQ",
-				AssetType:   "EQUITY",
-			},
+		{
+			Cusip:       "037833100",
+			Symbol:      "AAPL",
+			Description: "Apple Inc",
+			Exchange:    "NASDAQ",
+			AssetType:   "EQUITY",
 		},
 	}
 	got := roundtrip(t, input)
-	if len(got.Instruments) != 1 {
-		t.Fatalf("want 1, got %d", len(got.Instruments))
+	if len(got) != 1 {
+		t.Fatalf("want 1, got %d", len(got))
 	}
-	if got.Instruments[0].Symbol != "AAPL" {
-		t.Errorf("Symbol: want AAPL, got %s", got.Instruments[0].Symbol)
+	if got[0].Symbol != "AAPL" {
+		t.Errorf("Symbol: want AAPL, got %s", got[0].Symbol)
+	}
+}
+
+func TestInstrumentSearch_EnrichedFields(t *testing.T) {
+	// Verify that the enriched InstrumentSearch (matching InstrumentResponse) decodes
+	// the additional fields: bondFactor, bondMultiplier, bondPrice, type, fundamental, instrumentInfo, bondInstrumentInfo.
+	raw := `{
+		"cusip": "037833100",
+		"symbol": "AAPL",
+		"description": "Apple Inc",
+		"exchange": "NASDAQ",
+		"assetType": "EQUITY",
+		"bondFactor": "1.0",
+		"bondMultiplier": "100",
+		"bondPrice": 101.50,
+		"type": "COMMON_STOCK",
+		"fundamental": {
+			"symbol": "AAPL",
+			"high52": 199.62,
+			"low52": 124.17,
+			"peRatio": 28.5,
+			"beta": 1.28,
+			"eps": 6.43,
+			"marketCap": 2800000000000,
+			"dividendFreq": 4
+		},
+		"instrumentInfo": {
+			"cusip": "037833100",
+			"symbol": "AAPL",
+			"description": "Apple Inc",
+			"exchange": "NASDAQ",
+			"assetType": "EQUITY",
+			"type": "COMMON_STOCK"
+		}
+	}`
+	got := mustUnmarshal[schwabdev.InstrumentSearch](t, raw)
+	if got.BondFactor != "1.0" {
+		t.Errorf("BondFactor: want '1.0', got %s", got.BondFactor)
+	}
+	if got.BondMultiplier != "100" {
+		t.Errorf("BondMultiplier: want '100', got %s", got.BondMultiplier)
+	}
+	if got.BondPrice != 101.50 {
+		t.Errorf("BondPrice: want 101.50, got %f", got.BondPrice)
+	}
+	if got.Type != "COMMON_STOCK" {
+		t.Errorf("Type: want COMMON_STOCK, got %s", got.Type)
+	}
+	if got.Fundamental == nil {
+		t.Fatal("Fundamental is nil")
+	}
+	if got.Fundamental.PeRatio != 28.5 {
+		t.Errorf("Fundamental PeRatio: want 28.5, got %f", got.Fundamental.PeRatio)
+	}
+	if got.Fundamental.Beta != 1.28 {
+		t.Errorf("Fundamental Beta: want 1.28, got %f", got.Fundamental.Beta)
+	}
+	if got.Fundamental.MarketCap != 2800000000000 {
+		t.Errorf("Fundamental MarketCap: want 2800000000000, got %f", got.Fundamental.MarketCap)
+	}
+	if got.Fundamental.DividendFreq != 4 {
+		t.Errorf("Fundamental DividendFreq: want 4, got %d", got.Fundamental.DividendFreq)
+	}
+	if got.InstrumentInfo == nil {
+		t.Fatal("InstrumentInfo is nil")
+	}
+	if got.InstrumentInfo.Symbol != "AAPL" {
+		t.Errorf("InstrumentInfo Symbol: want AAPL, got %s", got.InstrumentInfo.Symbol)
+	}
+	if got.InstrumentInfo.Type != "COMMON_STOCK" {
+		t.Errorf("InstrumentInfo Type: want COMMON_STOCK, got %s", got.InstrumentInfo.Type)
+	}
+}
+
+func TestMarketDataBond_RoundTrip(t *testing.T) {
+	input := schwabdev.MarketDataBond{
+		Cusip:         "345370100",
+		Symbol:        "GOVT10Y",
+		Description:   "US Treasury 10 Year",
+		Exchange:      "GOVT",
+		AssetType:     "BOND",
+		BondFactor:    "1.0",
+		BondMultiplier: "1000",
+		BondPrice:     98.75,
+		Type:          "US_TREASURY_NOTE",
+	}
+	got := roundtrip(t, input)
+	if got.BondPrice != 98.75 {
+		t.Errorf("BondPrice: want 98.75, got %f", got.BondPrice)
+	}
+	if got.Type != "US_TREASURY_NOTE" {
+		t.Errorf("Type: want US_TREASURY_NOTE, got %s", got.Type)
 	}
 }
 
@@ -829,6 +969,7 @@ func TestPreferencesResponse_RoundTrip(t *testing.T) {
 		StreamerInfo: []*schwabdev.StreamerInfo{
 			{
 				StreamerURL:            "wss://streamer.schwab.com/ws",
+				SchwabClientCustomerID: "customer-xyz",
 				SchwabClientCorrelID:   "correl-abc-123",
 				SchwabClientChannel:    "IO",
 				SchwabClientFunctionID: "APIAPP",
@@ -856,7 +997,6 @@ func TestPreferencesResponse_UnmarshalFromAPI(t *testing.T) {
 			}
 		]
 	}`
-	// Note: streamerSocketUrl vs streamerUrl — verify which tag the struct uses.
 	got := mustUnmarshal[schwabdev.PreferencesResponse](t, raw)
 	if len(got.StreamerInfo) != 1 {
 		t.Fatalf("want 1, got %d", len(got.StreamerInfo))
@@ -871,12 +1011,12 @@ func TestOrderRequest_MarshalToAPI(t *testing.T) {
 		Session:           "NORMAL",
 		Duration:          "DAY",
 		OrderStrategyType: "SINGLE",
-		Price:             "150.00",
+		Price:             150.00,
 		OrderLegCollection: []*schwabdev.OrderLegRequest{
 			{
 				Instruction: "BUY",
 				Quantity:    10,
-				Instrument: &schwabdev.InstrumentRequest{
+				Instrument: &schwabdev.Instrument{
 					Symbol:    "AAPL",
 					AssetType: "EQUITY",
 				},
@@ -896,7 +1036,7 @@ func TestOrderRequest_MarshalToAPI(t *testing.T) {
 	if m["orderType"] != "LIMIT" {
 		t.Errorf("orderType: want LIMIT, got %v", m["orderType"])
 	}
-	if m["price"] != "150.00" {
+	if m["price"] != 150.0 {
 		t.Errorf("price: want 150.00, got %v", m["price"])
 	}
 	legs, ok := m["orderLegCollection"].([]any)
@@ -914,7 +1054,7 @@ func TestOrderRequest_OmitsEmptyOptionals(t *testing.T) {
 		Duration:          "DAY",
 		OrderStrategyType: "SINGLE",
 		OrderLegCollection: []*schwabdev.OrderLegRequest{
-			{Instruction: "SELL", Quantity: 5, Instrument: &schwabdev.InstrumentRequest{Symbol: "TSLA", AssetType: "EQUITY"}},
+			{Instruction: "SELL", Quantity: 5, Instrument: &schwabdev.Instrument{Symbol: "TSLA", AssetType: "EQUITY"}},
 		},
 	}
 	b, err := json.Marshal(input)
@@ -937,7 +1077,7 @@ func TestPreviewOrderResponse_RoundTrip(t *testing.T) {
 	input := schwabdev.PreviewOrderResponse{
 		OrderID: 999,
 		OrderValidationResult: &schwabdev.OrderValidationResult{
-			Rejects: []*schwabdev.OrderReject{},
+			Rejects: []*schwabdev.OrderValidationDetail{},
 		},
 		CommissionAndFee: &schwabdev.CommissionAndFee{
 			Commission: &schwabdev.Commission{
@@ -974,15 +1114,16 @@ func TestPosition_RoundTrip(t *testing.T) {
 		LongQuantity:                 100,
 		PreviousSessionLongQuantity:  100,
 		PreviousSessionShortQuantity: 0,
-		ChangedSinceLastSession:      false,
-		AssetType:                    "EQUITY",
-		Cusip:                        "594918104",
-		Symbol:                       "MSFT",
-		InstrumentID:                 7654321,
+		Instrument: &schwabdev.Instrument{
+			AssetType:    "EQUITY",
+			Cusip:        "594918104",
+			Symbol:       "MSFT",
+			InstrumentID: 7654321,
+		},
 	}
 	got := roundtrip(t, input)
-	if got.Symbol != "MSFT" {
-		t.Errorf("Symbol: want MSFT, got %s", got.Symbol)
+	if got.Instrument == nil || got.Instrument.Symbol != "MSFT" {
+		t.Errorf("Instrument symbol: want MSFT, got %v", got.Instrument)
 	}
 	if got.LongQuantity != 100 {
 		t.Errorf("LongQuantity: want 100, got %f", got.LongQuantity)
@@ -1024,5 +1165,174 @@ func TestTokenRecord_RoundTrip(t *testing.T) {
 	}
 	if got.AccessTokenIssued.IsZero() {
 		t.Error("AccessTokenIssued should not be zero")
+	}
+}
+
+// ── Spec-Aligned Constants ────────────────────────────────────────────────────
+
+func TestConstants_TraderAPI(t *testing.T) {
+	// Verify key enum values match the OpenAPI spec exactly.
+	tests := []struct {
+		name  string
+		got   string
+		want  string
+	}{
+		{"InstructionSellShortExempt", schwabdev.InstructionSellShortExempt, "SELL_SHORT_EXEMPT"},
+		{"DurationImmediateOrCancel", schwabdev.DurationImmediateOrCancel, "IMMEDIATE_OR_CANCEL"},
+		{"DurationEndOfWeek", schwabdev.DurationEndOfWeek, "END_OF_WEEK"},
+		{"OrderTypeCabinet", schwabdev.OrderTypeCabinet, "CABINET"},
+		{"OrderTypeNonMarketable", schwabdev.OrderTypeNonMarketable, "NON_MARKETABLE"},
+		{"OrderTypeLimitOnClose", schwabdev.OrderTypeLimitOnClose, "LIMIT_ON_CLOSE"},
+		{"OrderTypeUnknown", schwabdev.OrderTypeUnknown, "UNKNOWN"},
+		{"OrderStrategyTypeCancel", schwabdev.OrderStrategyTypeCancel, "CANCEL"},
+		{"OrderStrategyTypeFlatten", schwabdev.OrderStrategyTypeFlatten, "FLATTEN"},
+		{"ComplexOrderStrategyButterfly", schwabdev.ComplexOrderStrategyButterfly, "BUTTERFLY"},
+		{"ComplexOrderStrategyBackRatio", schwabdev.ComplexOrderStrategyBackRatio, "BACK_RATIO"},
+		{"ComplexOrderStrategyVerticalRoll", schwabdev.ComplexOrderStrategyVerticalRoll, "VERTICAL_ROLL"},
+		{"ComplexOrderStrategyIronCondor", schwabdev.ComplexOrderStrategyIronCondor, "IRON_CONDOR"},
+		{"ComplexOrderStrategyDoubleDiagonal", schwabdev.ComplexOrderStrategyDoubleDiagonal, "DOUBLE_DIAGONAL"},
+		{"PositionEffectOpening", schwabdev.PositionEffectOpening, "OPENING"},
+		{"PositionEffectClosing", schwabdev.PositionEffectClosing, "CLOSING"},
+		{"PositionEffectAutomatic", schwabdev.PositionEffectAutomatic, "AUTOMATIC"},
+		{"AssetTypeFuture", schwabdev.AssetTypeFuture, "FUTURE"},
+		{"AssetTypeForex", schwabdev.AssetTypeForex, "FOREX"},
+		{"AssetTypeCashEquivalent", schwabdev.AssetTypeCashEquivalent, "CASH_EQUIVALENT"},
+		{"AssetTypeCollectiveInvestment", schwabdev.AssetTypeCollectiveInvestment, "COLLECTIVE_INVESTMENT"},
+		{"OrderStatusNew", schwabdev.OrderStatusNew, "NEW"},
+		{"OrderStatusUnknown", schwabdev.OrderStatusUnknown, "UNKNOWN"},
+		{"OrderStatusPendingRecall", schwabdev.OrderStatusPendingRecall, "PENDING_RECALL"},
+		{"TransactionTypeMemorandum", schwabdev.TransactionTypeMemorandum, "MEMORANDUM"},
+		{"TransactionTypeSmaAdjustment", schwabdev.TransactionTypeSmaAdjustment, "SMA_ADJUSTMENT"},
+		{"TransactionTypeMarginCall", schwabdev.TransactionTypeMarginCall, "MARGIN_CALL"},
+		{"RequestedDestinationECNArca", schwabdev.RequestedDestinationECNArca, "ECN_ARCA"},
+		{"SpecialInstructionAllOrNone", schwabdev.SpecialInstructionAllOrNone, "ALL_OR_NONE"},
+		{"StopPriceLinkBasisAskBid", schwabdev.StopPriceLinkBasisAskBid, "ASK_BID"},
+		{"TaxLotMethodLossHarvester", schwabdev.TaxLotMethodLossHarvester, "LOSS_HARVESTER"},
+		{"FeeTypeFTT", schwabdev.FeeTypeFTT, "FTT"},
+		{"FeeTypeTefraTax", schwabdev.FeeTypeTefraTax, "TEFRA_TAX"},
+		{"TransferItemPositionEffectUnknown", schwabdev.TransferItemPositionEffectUnknown, "UNKNOWN"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.got != tc.want {
+				t.Errorf("%s: want %q, got %q", tc.name, tc.want, tc.got)
+			}
+		})
+	}
+}
+
+func TestConstants_OrderTypeRequest(t *testing.T) {
+	// Verify that OrderTypeRequest constants exist and match OrderType values (without UNKNOWN).
+	tests := []struct {
+		name     string
+		reqConst string
+		want     string
+	}{
+		{"Market", schwabdev.OrderTypeRequestMarket, "MARKET"},
+		{"Limit", schwabdev.OrderTypeRequestLimit, "LIMIT"},
+		{"Stop", schwabdev.OrderTypeRequestStop, "STOP"},
+		{"StopLimit", schwabdev.OrderTypeRequestStopLimit, "STOP_LIMIT"},
+		{"TrailingStop", schwabdev.OrderTypeRequestTrailingStop, "TRAILING_STOP"},
+		{"Cabinet", schwabdev.OrderTypeRequestCabinet, "CABINET"},
+		{"NonMarketable", schwabdev.OrderTypeRequestNonMarketable, "NON_MARKETABLE"},
+		{"MarketOnClose", schwabdev.OrderTypeRequestMarketOnClose, "MARKET_ON_CLOSE"},
+		{"Exercise", schwabdev.OrderTypeRequestExercise, "EXERCISE"},
+		{"TrailingStopLimit", schwabdev.OrderTypeRequestTrailingStopLimit, "TRAILING_STOP_LIMIT"},
+		{"NetDebit", schwabdev.OrderTypeRequestNetDebit, "NET_DEBIT"},
+		{"NetCredit", schwabdev.OrderTypeRequestNetCredit, "NET_CREDIT"},
+		{"NetZero", schwabdev.OrderTypeRequestNetZero, "NET_ZERO"},
+		{"LimitOnClose", schwabdev.OrderTypeRequestLimitOnClose, "LIMIT_ON_CLOSE"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.reqConst != tc.want {
+				t.Errorf("%s: want %q, got %q", tc.name, tc.want, tc.reqConst)
+			}
+		})
+	}
+}
+
+func TestConstants_MarketDataAPI(t *testing.T) {
+	// Verify market data enum values match the OpenAPI spec.
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{"AssetMainTypeBond", schwabdev.AssetMainTypeBond, "BOND"},
+		{"AssetMainTypeFutureOption", schwabdev.AssetMainTypeFutureOption, "FUTURE_OPTION"},
+		{"EquityAssetSubTypeETF", schwabdev.EquityAssetSubTypeETF, "ETF"},
+		{"MutualFundAssetSubTypeMMF", schwabdev.MutualFundAssetSubTypeMMF, "MMF"},
+		{"QuoteTypeNBBO", schwabdev.QuoteTypeNBBO, "NBBO"},
+		{"QuoteTypeNFL", schwabdev.QuoteTypeNFL, "NFL"},
+		{"FundStrategyActive", schwabdev.FundStrategyActive, "A"},
+		{"FundStrategyQuantitative", schwabdev.FundStrategyQuantitative, "Q"},
+		{"MDContractTypePut", schwabdev.MDContractTypePut, "P"},
+		{"MDContractTypeCall", schwabdev.MDContractTypeCall, "C"},
+		{"MDExpirationTypeMonthly", schwabdev.MDExpirationTypeMonthly, "M"},
+		{"MDExpirationTypeWeekly", schwabdev.MDExpirationTypeWeekly, "W"},
+		{"MDSettlementTypeAM", schwabdev.MDSettlementTypeAM, "A"},
+		{"MDSettlementTypePM", schwabdev.MDSettlementTypePM, "P"},
+		{"MDExerciseTypeAmerican", schwabdev.MDExerciseTypeAmerican, "A"},
+		{"MDExerciseTypeEuropean", schwabdev.MDExerciseTypeEuropean, "E"},
+		{"SortTypeVolume", schwabdev.SortTypeVolume, "VOLUME"},
+		{"PeriodTypeDay", schwabdev.PeriodTypeDay, "day"},
+		{"FrequencyTypeMinute", schwabdev.FrequencyTypeMinute, "minute"},
+		{"EntitlementPayingPro", schwabdev.EntitlementPayingPro, "PN"},
+		{"ExpMonthJan", schwabdev.ExpMonthJan, "JAN"},
+		{"ExpMonthAll", schwabdev.ExpMonthAll, "ALL"},
+		{"MoverSymbolDJI", schwabdev.MoverSymbolDJI, "$DJI"},
+		{"MoverSymbolOptionPut", schwabdev.MoverSymbolOptionPut, "OPTION_PUT"},
+		{"ChainStrategyButterfly", schwabdev.ChainStrategyButterfly, "BUTTERFLY"},
+		{"ChainStrategyAnalytical", schwabdev.ChainStrategyAnalytical, "ANALYTICAL"},
+		{"ProjectionSearch", schwabdev.ProjectionSearch, "search"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.got != tc.want {
+				t.Errorf("%s: want %q, got %q", tc.name, tc.want, tc.got)
+			}
+		})
+	}
+}
+
+func TestConstants_DivFreq(t *testing.T) {
+	// DivFreq is an integer enum.
+	tests := []struct {
+		name string
+		got  int
+		want int
+	}{
+		{"Annually", schwabdev.DivFreqAnnually, 1},
+		{"Quarterly", schwabdev.DivFreqQuarterly, 4},
+		{"Monthly", schwabdev.DivFreqMonthly, 12},
+		{"BiMonthly", schwabdev.DivFreqBiMonthly, 6},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.got != tc.want {
+				t.Errorf("%s: want %d, got %d", tc.name, tc.want, tc.got)
+			}
+		})
+	}
+}
+
+func TestConstants_MoverFrequency(t *testing.T) {
+	// MoverFrequency is an integer enum.
+	tests := []struct {
+		name string
+		got  int
+		want int
+	}{
+		{"Freq0", schwabdev.MoverFrequency0, 0},
+		{"Freq5", schwabdev.MoverFrequency5, 5},
+		{"Freq60", schwabdev.MoverFrequency60, 60},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.got != tc.want {
+				t.Errorf("%s: want %d, got %d", tc.name, tc.want, tc.got)
+			}
+		})
 	}
 }

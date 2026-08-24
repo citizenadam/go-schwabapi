@@ -257,12 +257,12 @@ func TestIntegration_PreviewOrder(t *testing.T) {
 		Session:           "NORMAL",
 		Duration:          "DAY",
 		OrderStrategyType: "SINGLE",
-		Price:             "1.00", // far OTM — unlikely to fill
+		Price:             1.00, // far OTM — unlikely to fill
 		OrderLegCollection: []*schwabdev.OrderLegRequest{
 			{
 				Instruction: "BUY",
 				Quantity:    1,
-				Instrument: &schwabdev.InstrumentRequest{
+				Instrument: &schwabdev.Instrument{
 					Symbol:    "AAPL",
 					AssetType: "EQUITY",
 				},
@@ -599,7 +599,7 @@ func TestIntegration_OptionExpirationChain(t *testing.T) {
 		t.Error("ExpirationList is empty")
 	}
 	for i, exp := range resp.ExpirationList {
-		if exp.ExpirationDate == "" {
+		if exp.Expiration == "" {
 			t.Errorf("expiration[%d]: ExpirationDate is empty", i)
 		}
 		if exp.DaysToExpiration < 0 {
@@ -701,7 +701,7 @@ func TestIntegration_InstrumentCUSIP(t *testing.T) {
 		t.Fatal("response is nil")
 	}
 	assertValidJSON(t, "InstrumentCUSIPResponse", resp)
-	t.Logf("InstrumentCUSIP(AAPL): %d instrument(s)", len(resp.Instruments))
+	t.Logf("InstrumentCUSIP(AAPL): %d instrument(s)", len(*resp))
 }
 
 // ── Streamer Info ─────────────────────────────────────────────────────────────

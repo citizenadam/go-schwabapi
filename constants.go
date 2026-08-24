@@ -88,160 +88,246 @@ const (
 	EncryptionPrefix = "enc:"
 )
 
-// Order Instruction Constants
+// ============================================================================
+// OpenAPI Enum Constants — Trader API
+// The following constants correspond to the enum values defined in the
+// Schwab Trader API OpenAPI specification.
+// ============================================================================
+
+// Instruction enum — the action of the order on a leg.
 const (
-	// InstructionBuy is a standard buy order (equities)
-	InstructionBuy = "BUY"
-	// InstructionSell is a standard sell order (equities)
-	InstructionSell = "SELL"
-	// InstructionBuyToOpen is buying to open a position
-	InstructionBuyToOpen = "BUY_TO_OPEN"
-	// InstructionBuyToClose is buying to close a position
-	InstructionBuyToClose = "BUY_TO_CLOSE"
-	// InstructionSellToOpen is selling to open a position
-	InstructionSellToOpen = "SELL_TO_OPEN"
-	// InstructionSellToClose is selling to close a position
-	InstructionSellToClose = "SELL_TO_CLOSE"
-	// InstructionSellShort is selling short
-	InstructionSellShort = "SELL_SHORT"
-	// InstructionBuyToCover is buying to cover a short position
-	InstructionBuyToCover = "BUY_TO_COVER"
-	// InstructionExchange is for exchange-specific instructions
-	InstructionExchange = "EXCHANGE"
+	InstructionBuy             = "BUY"
+	InstructionSell            = "SELL"
+	InstructionBuyToCover      = "BUY_TO_COVER"
+	InstructionSellShort       = "SELL_SHORT"
+	InstructionBuyToOpen       = "BUY_TO_OPEN"
+	InstructionBuyToClose      = "BUY_TO_CLOSE"
+	InstructionSellToOpen      = "SELL_TO_OPEN"
+	InstructionSellToClose     = "SELL_TO_CLOSE"
+	InstructionExchange        = "EXCHANGE"
+	InstructionSellShortExempt = "SELL_SHORT_EXEMPT"
 )
 
-// Order Position Effect Constants
+// Duration enum — how long the order stays active.
 const (
-	// PositionEffectOpen opens a new position
-	PositionEffectOpen = "OPEN"
-	// PositionEffectClosed closes an existing position
-	PositionEffectClosed = "CLOSED"
+	DurationDay               = "DAY"
+	DurationGoodTillCancel    = "GOOD_TILL_CANCEL"
+	DurationFillOrKill        = "FILL_OR_KILL"
+	DurationImmediateOrCancel = "IMMEDIATE_OR_CANCEL"
+	DurationEndOfWeek         = "END_OF_WEEK"
+	DurationEndOfMonth        = "END_OF_MONTH"
+	DurationNextEndOfMonth    = "NEXT_END_OF_MONTH"
+	DurationUnknown           = "UNKNOWN"
 )
 
-// Complex Order Strategy Constants
+// OrderType enum — the type of the order (response, includes UNKNOWN).
 const (
-	// ComplexOrderStrategyNone is no complex strategy (single-leg default)
-	ComplexOrderStrategyNone = "NONE"
-	// ComplexOrderStrategyButterfly is an Iron Butterfly spread
-	ComplexOrderStrategyButterfly = "IRON_BUTTERFLY"
-	// ComplexOrderStrategyVertical is a Vertical spread
-	ComplexOrderStrategyVertical = "VERTICAL"
-	// ComplexOrderStrategyCombo is a Combo spread
-	ComplexOrderStrategyCombo = "COMBO"
-	// ComplexOrderStrategyCovered is a Covered stock position
-	ComplexOrderStrategyCovered = "COVERED"
-	// ComplexOrderStrategyCondor is a Condor spread
-	ComplexOrderStrategyCondor = "CONDOR"
-	// ComplexOrderStrategyCollarSynthetic is a Collar Synthetic spread
-	ComplexOrderStrategyCollarSynthetic = "COLLAR_SYNTHETIC"
-	// ComplexOrderStrategyDiagonal is a Diagonal spread
-	ComplexOrderStrategyDiagonal = "DIAGONAL"
-	// ComplexOrderStrategyRoll is a Roll strategy
-	ComplexOrderStrategyRoll = "ROLL"
-	// ComplexOrderStrategyStraddle is a Straddle
-	ComplexOrderStrategyStraddle = "STRADDLE"
-	// ComplexOrderStrategyStrangle is a Strangle
-	ComplexOrderStrategyStrangle = "STRANGLE"
-	// ComplexOrderStrategyBackspread is a Backspread
-	ComplexOrderStrategyBackspread = "BACKSPREAD"
-	// ComplexOrderStrategyCalendar is a Calendar spread
-	ComplexOrderStrategyCalendar = "CALENDAR"
-	// ComplexOrderStrategyCustom is a Custom strategy
-	ComplexOrderStrategyCustom = "CUSTOM"
-)
-
-// Order Strategy Type Constants
-const (
-	// OrderStrategyTypeSingle is a single-leg order
-	OrderStrategyTypeSingle = "SINGLE"
-	// OrderStrategyTypeMultileg is a multi-leg order
-	OrderStrategyTypeMultileg = "MULTILEG"
-	// OrderStrategyTypeOco is one-cancels-other
-	OrderStrategyTypeOco = "OCO"
-	// OrderStrategyTypeTrigger is a trigger order
-	OrderStrategyTypeTrigger = "TRIGGER"
-	// OrderStrategyTypeRatio is a ratio spread
-	OrderStrategyTypeRatio = "RATIO"
-)
-
-// Order Duration Constants
-const (
-	// OrderDurationDay is good for the day only
-	OrderDurationDay = "DAY"
-	// OrderDurationGoodTillCancel is good until cancelled
-	OrderDurationGoodTillCancel = "GOOD_TILL_CANCEL"
-	// OrderDurationFillOrKill is immediate or cancel
-	OrderDurationFillOrKill = "FILL_OR_KILL"
-)
-
-// Order Session Constants
-const (
-	// OrderSessionNormal is the normal market session
-	OrderSessionNormal = "NORMAL"
-	// OrderSessionAM is the morning session
-	OrderSessionAM = "AM"
-	// OrderSessionPM is the afternoon session
-	OrderSessionPM = "PM"
-	// OrderSessionSeamless is the seamless/extended hours session
-	OrderSessionSeamless = "SEAMLESS"
-)
-
-// Order Type Constants
-const (
-	// OrderTypeLimit is a limit order
-	OrderTypeLimit = "LIMIT"
-	// OrderTypeMarket is a market order
-	OrderTypeMarket = "MARKET"
-	// OrderTypeStop is a stop order
-	OrderTypeStop = "STOP"
-	// OrderTypeStopLimit is a stop-limit order
-	OrderTypeStopLimit = "STOP_LIMIT"
-	// OrderTypeTrailingStop is a trailing stop order
-	OrderTypeTrailingStop = "TRAILING_STOP"
-	// OrderTypeMarketOnClose is a market on close order
-	OrderTypeMarketOnClose = "MARKET_ON_CLOSE"
-	// OrderTypeExercise is an exercise order
-	OrderTypeExercise = "EXERCISE"
-	// OrderTypeTrailingStopLimit is a trailing stop limit order
+	OrderTypeMarket            = "MARKET"
+	OrderTypeLimit             = "LIMIT"
+	OrderTypeStop              = "STOP"
+	OrderTypeStopLimit         = "STOP_LIMIT"
+	OrderTypeTrailingStop      = "TRAILING_STOP"
+	OrderTypeCabinet           = "CABINET"
+	OrderTypeNonMarketable     = "NON_MARKETABLE"
+	OrderTypeMarketOnClose     = "MARKET_ON_CLOSE"
+	OrderTypeExercise          = "EXERCISE"
 	OrderTypeTrailingStopLimit = "TRAILING_STOP_LIMIT"
-	// OrderTypeNetDebit is a net debit (buy) order
-	OrderTypeNetDebit = "NET_DEBIT"
-	// OrderTypeNetCredit is a net credit (sell) order
-	OrderTypeNetCredit = "NET_CREDIT"
-	// OrderTypeNetZero is a net zero (even) order
-	OrderTypeNetZero = "NET_ZERO"
+	OrderTypeNetDebit          = "NET_DEBIT"
+	OrderTypeNetCredit         = "NET_CREDIT"
+	OrderTypeNetZero           = "NET_ZERO"
+	OrderTypeLimitOnClose      = "LIMIT_ON_CLOSE"
+	OrderTypeUnknown           = "UNKNOWN"
 )
 
-// Asset Type Constants
+// OrderTypeRequest enum — the type of the order for request bodies.
+// Same as OrderType but excludes UNKNOWN (which is only valid in responses).
 const (
-	AssetTypeEquity      = "EQUITY"
-	AssetTypeOption      = "OPTION"
-	AssetTypeIndex       = "INDEX"
-	AssetTypeMutualFund  = "MUTUAL_FUND"
-	AssetTypeFixedIncome = "FIXED_INCOME"
-	AssetTypeCurrency    = "CURRENCY"
+	OrderTypeRequestMarket            = "MARKET"
+	OrderTypeRequestLimit             = "LIMIT"
+	OrderTypeRequestStop              = "STOP"
+	OrderTypeRequestStopLimit         = "STOP_LIMIT"
+	OrderTypeRequestTrailingStop      = "TRAILING_STOP"
+	OrderTypeRequestCabinet           = "CABINET"
+	OrderTypeRequestNonMarketable     = "NON_MARKETABLE"
+	OrderTypeRequestMarketOnClose     = "MARKET_ON_CLOSE"
+	OrderTypeRequestExercise          = "EXERCISE"
+	OrderTypeRequestTrailingStopLimit = "TRAILING_STOP_LIMIT"
+	OrderTypeRequestNetDebit          = "NET_DEBIT"
+	OrderTypeRequestNetCredit         = "NET_CREDIT"
+	OrderTypeRequestNetZero           = "NET_ZERO"
+	OrderTypeRequestLimitOnClose      = "LIMIT_ON_CLOSE"
 )
 
-// Order Status Constants
+// OrderStrategyType enum — the strategy type for the order.
 const (
-	OrderStatusAwaitingParentOrder   = "AWAITING_PARENT_ORDER"
-	OrderStatusAwaitingCondition     = "AWAITING_CONDITION"
-	OrderStatusAwaitingManualReview  = "AWAITING_MANUAL_REVIEW"
+	OrderStrategyTypeSingle     = "SINGLE"
+	OrderStrategyTypeCancel     = "CANCEL"
+	OrderStrategyTypeRecall     = "RECALL"
+	OrderStrategyTypePair       = "PAIR"
+	OrderStrategyTypeFlatten    = "FLATTEN"
+	OrderStrategyTypeTwoDaySwap = "TWO_DAY_SWAP"
+	OrderStrategyTypeBlastAll   = "BLAST_ALL"
+	OrderStrategyTypeOCO        = "OCO"
+	OrderStrategyTypeTrigger    = "TRIGGER"
+)
+
+// ComplexOrderStrategyType enum — the complex strategy type for the order.
+const (
+	ComplexOrderStrategyNone                   = "NONE"
+	ComplexOrderStrategyCovered                = "COVERED"
+	ComplexOrderStrategyVertical               = "VERTICAL"
+	ComplexOrderStrategyBackRatio              = "BACK_RATIO"
+	ComplexOrderStrategyCalendar               = "CALENDAR"
+	ComplexOrderStrategyDiagonal               = "DIAGONAL"
+	ComplexOrderStrategyStraddle               = "STRADDLE"
+	ComplexOrderStrategyStrangle               = "STRANGLE"
+	ComplexOrderStrategyCollarSynthetic        = "COLLAR_SYNTHETIC"
+	ComplexOrderStrategyButterfly              = "BUTTERFLY"
+	ComplexOrderStrategyCondor                 = "CONDOR"
+	ComplexOrderStrategyIronCondor             = "IRON_CONDOR"
+	ComplexOrderStrategyVerticalRoll           = "VERTICAL_ROLL"
+	ComplexOrderStrategyCollarWithStock        = "COLLAR_WITH_STOCK"
+	ComplexOrderStrategyDoubleDiagonal         = "DOUBLE_DIAGONAL"
+	ComplexOrderStrategyUnbalancedButterfly    = "UNBALANCED_BUTTERFLY"
+	ComplexOrderStrategyUnbalancedCondor       = "UNBALANCED_CONDOR"
+	ComplexOrderStrategyUnbalancedIronCondor   = "UNBALANCED_IRON_CONDOR"
+	ComplexOrderStrategyUnbalancedVerticalRoll = "UNBALANCED_VERTICAL_ROLL"
+	ComplexOrderStrategyMutualFundSwap         = "MUTUAL_FUND_SWAP"
+	ComplexOrderStrategyCustom                 = "CUSTOM"
+)
+
+// Session enum — the market session for the order.
+const (
+	SessionNormal   = "NORMAL"
+	SessionAM       = "AM"
+	SessionPM       = "PM"
+	SessionSeamless = "SEAMLESS"
+)
+
+// Status enum — the current status of the order.
+const (
+	OrderStatusAwaitingParentOrder    = "AWAITING_PARENT_ORDER"
+	OrderStatusAwaitingCondition      = "AWAITING_CONDITION"
+	OrderStatusAwaitingStopCondition  = "AWAITING_STOP_CONDITION"
+	OrderStatusAwaitingManualReview   = "AWAITING_MANUAL_REVIEW"
 	OrderStatusAccepted               = "ACCEPTED"
-	OrderStatusAwaitingURouting      = "AWAITING_UR_OUT"
+	OrderStatusAwaitingURouting       = "AWAITING_UR_OUT"
 	OrderStatusPendingActivation      = "PENDING_ACTIVATION"
 	OrderStatusQueued                 = "QUEUED"
-	OrderStatusWorking                 = "WORKING"
+	OrderStatusWorking                = "WORKING"
 	OrderStatusRejected                = "REJECTED"
-	OrderStatusPendingCancel           = "PENDING_CANCEL"
+	OrderStatusPendingCancel          = "PENDING_CANCEL"
 	OrderStatusCanceled                = "CANCELED"
-	OrderStatusPendingReplace           = "PENDING_REPLACE"
-	OrderStatusReplaced                 = "REPLACED"
-	OrderStatusFilled                  = "FILLED"
-	OrderStatusExpired                  = "EXPIRED"
+	OrderStatusPendingReplace         = "PENDING_REPLACE"
+	OrderStatusReplaced               = "REPLACED"
+	OrderStatusFilled                 = "FILLED"
+	OrderStatusExpired                = "EXPIRED"
+	OrderStatusNew                    = "NEW"
+	OrderStatusAwaitingReleaseTime    = "AWAITING_RELEASE_TIME"
+	OrderStatusPendingAcknowledgement = "PENDING_ACKNOWLEDGEMENT"
+	OrderStatusPendingRecall          = "PENDING_RECALL"
+	OrderStatusUnknown                = "UNKNOWN"
 )
 
-// Transaction Type Constants
+// AssetType enum — the type of asset for the instrument.
+const (
+	AssetTypeEquity               = "EQUITY"
+	AssetTypeMutualFund           = "MUTUAL_FUND"
+	AssetTypeOption               = "OPTION"
+	AssetTypeFuture               = "FUTURE"
+	AssetTypeForex                = "FOREX"
+	AssetTypeIndex                = "INDEX"
+	AssetTypeCashEquivalent       = "CASH_EQUIVALENT"
+	AssetTypeFixedIncome          = "FIXED_INCOME"
+	AssetTypeProduct              = "PRODUCT"
+	AssetTypeCurrency             = "CURRENCY"
+	AssetTypeCollectiveInvestment = "COLLECTIVE_INVESTMENT"
+)
+
+// SpecialInstruction enum — special handling instructions for the order.
+const (
+	SpecialInstructionAllOrNone            = "ALL_OR_NONE"
+	SpecialInstructionDoNotReduce          = "DO_NOT_REDUCE"
+	SpecialInstructionAllOrNoneDoNotReduce = "ALL_OR_NONE_DO_NOT_REDUCE"
+)
+
+// StopPriceLinkBasis enum — the basis for linking the stop price.
+const (
+	StopPriceLinkBasisManual  = "MANUAL"
+	StopPriceLinkBasisBase    = "BASE"
+	StopPriceLinkBasisTrigger = "TRIGGER"
+	StopPriceLinkBasisLast    = "LAST"
+	StopPriceLinkBasisBid     = "BID"
+	StopPriceLinkBasisAsk     = "ASK"
+	StopPriceLinkBasisAskBid  = "ASK_BID"
+	StopPriceLinkBasisMark    = "MARK"
+	StopPriceLinkBasisAverage = "AVERAGE"
+)
+
+// StopPriceLinkType enum — the type of link for the stop price.
+const (
+	StopPriceLinkTypeValue   = "VALUE"
+	StopPriceLinkTypePercent = "PERCENT"
+	StopPriceLinkTypeTick    = "TICK"
+)
+
+// StopType enum — the type of stop for the order.
+const (
+	StopTypeStandard = "STANDARD"
+	StopTypeBid      = "BID"
+	StopTypeAsk      = "ASK"
+	StopTypeLast     = "LAST"
+	StopTypeMark     = "MARK"
+)
+
+// PriceLinkBasis enum — the basis for linking the price.
+const (
+	PriceLinkBasisManual  = "MANUAL"
+	PriceLinkBasisBase    = "BASE"
+	PriceLinkBasisTrigger = "TRIGGER"
+	PriceLinkBasisLast    = "LAST"
+	PriceLinkBasisBid     = "BID"
+	PriceLinkBasisAsk     = "ASK"
+	PriceLinkBasisAskBid  = "ASK_BID"
+	PriceLinkBasisMark    = "MARK"
+	PriceLinkBasisAverage = "AVERAGE"
+)
+
+// PriceLinkType enum — the type of link for the price.
+const (
+	PriceLinkTypeValue   = "VALUE"
+	PriceLinkTypePercent = "PERCENT"
+	PriceLinkTypeTick    = "TICK"
+)
+
+// TaxLotMethod enum — the method used for tax lot selection.
+const (
+	TaxLotMethodFIFO          = "FIFO"
+	TaxLotMethodLIFO          = "LIFO"
+	TaxLotMethodHighCost      = "HIGH_COST"
+	TaxLotMethodLowCost       = "LOW_COST"
+	TaxLotMethodAverageCost   = "AVERAGE_COST"
+	TaxLotMethodSpecificLot   = "SPECIFIC_LOT"
+	TaxLotMethodLossHarvester = "LOSS_HARVESTER"
+)
+
+// RequestedDestination enum — the requested routing destination for the order.
+const (
+	RequestedDestinationINET    = "INET"
+	RequestedDestinationECNArca = "ECN_ARCA"
+	RequestedDestinationCBOE    = "CBOE"
+	RequestedDestinationAMEX    = "AMEX"
+	RequestedDestinationPHLX    = "PHLX"
+	RequestedDestinationISE     = "ISE"
+	RequestedDestinationBOX     = "BOX"
+	RequestedDestinationNYSE    = "NYSE"
+	RequestedDestinationNASDAQ  = "NASDAQ"
+	RequestedDestinationBATS    = "BATS"
+	RequestedDestinationC2      = "C2"
+	RequestedDestinationAuto    = "AUTO"
+)
+
+// TransactionType enum — the type of account transaction.
 const (
 	TransactionTypeTrade              = "TRADE"
 	TransactionTypeReceiveAndDeliver  = "RECEIVE_AND_DELIVER"
@@ -251,12 +337,254 @@ const (
 	TransactionTypeCashReceipt        = "CASH_RECEIPT"
 	TransactionTypeCashDisbursement   = "CASH_DISBURSEMENT"
 	TransactionTypeElectronicFund     = "ELECTRONIC_FUND"
-	TransactionTypeWireOut             = "WIRE_OUT"
-	TransactionTypeWireIn              = "WIRE_IN"
-	TransactionTypeJournal             = "JOURNAL"
-	TransactionTypeMemoEntry           = "MEMO_ENTRY"
-	TransactionTypeMoneyMarket         = "MONEY_MARKET"
-	TransactionTypeSmawMaintenance     = "SMA_MAINTENANCE"
+	TransactionTypeWireOut            = "WIRE_OUT"
+	TransactionTypeWireIn             = "WIRE_IN"
+	TransactionTypeJournal            = "JOURNAL"
+	TransactionTypeMemorandum         = "MEMORANDUM"
+	TransactionTypeMarginCall         = "MARGIN_CALL"
+	TransactionTypeMoneyMarket        = "MONEY_MARKET"
+	TransactionTypeSmaAdjustment      = "SMA_ADJUSTMENT"
+)
+
+// PositionEffect enum (OrderLegCollection) — the effect on the position.
+const (
+	PositionEffectOpening   = "OPENING"
+	PositionEffectClosing   = "CLOSING"
+	PositionEffectAutomatic = "AUTOMATIC"
+)
+
+// QuantityType enum (OrderLegCollection) — the type of quantity specified.
+const (
+	QuantityTypeAllShares = "ALL_SHARES"
+	QuantityTypeDollars   = "DOLLARS"
+	QuantityTypeShares    = "SHARES"
+)
+
+// DivCapGains enum (OrderLegCollection) — dividend / capital gains handling.
+const (
+	DivCapGainsReinvest = "REINVEST"
+	DivCapGainsPayout   = "PAYOUT"
+)
+
+// SubAccount enum (Transaction) — the sub-account type.
+const (
+	SubAccountCash    = "CASH"
+	SubAccountMargin  = "MARGIN"
+	SubAccountShort   = "SHORT"
+	SubAccountDiv     = "DIV"
+	SubAccountIncome  = "INCOME"
+	SubAccountUnknown = "UNKNOWN"
+)
+
+// TransactionStatus enum (Transaction) — the status of a transaction.
+const (
+	TransactionStatusValid   = "VALID"
+	TransactionStatusInvalid = "INVALID"
+	TransactionStatusPending = "PENDING"
+	TransactionStatusUnknown = "UNKNOWN"
+)
+
+// TransactionActivityType enum (Transaction) — the activity type of a transaction.
+const (
+	TransactionActivityTypeActivityCorrection = "ACTIVITY_CORRECTION"
+	TransactionActivityTypeExecution          = "EXECUTION"
+	TransactionActivityTypeOrderAction        = "ORDER_ACTION"
+	TransactionActivityTypeTransfer           = "TRANSFER"
+	TransactionActivityTypeUnknown            = "UNKNOWN"
+)
+
+// AdvancedOrderType enum (OrderStrategy) — the type of advanced order.
+const (
+	AdvancedOrderTypeNone     = "NONE"
+	AdvancedOrderTypeOTO      = "OTO"
+	AdvancedOrderTypeOCO      = "OCO"
+	AdvancedOrderTypeOTOCO    = "OTOCO"
+	AdvancedOrderTypeOT2OCO   = "OT2OCO"
+	AdvancedOrderTypeOT3OCO   = "OT3OCO"
+	AdvancedOrderTypeBlastAll = "BLAST_ALL"
+	AdvancedOrderTypeOTA      = "OTA"
+	AdvancedOrderTypePair     = "PAIR"
+)
+
+// AmountIndicator enum (OrderStrategy) — indicates the amount basis.
+const (
+	AmountIndicatorDollars    = "DOLLARS"
+	AmountIndicatorShares     = "SHARES"
+	AmountIndicatorAllShares  = "ALL_SHARES"
+	AmountIndicatorPercentage = "PERCENTAGE"
+	AmountIndicatorUnknown    = "UNKNOWN"
+)
+
+// SettlementInstruction enum (OrderStrategy) — the settlement instruction.
+const (
+	SettlementInstructionRegular = "REGULAR"
+	SettlementInstructionCash    = "CASH"
+	SettlementInstructionNextDay = "NEXT_DAY"
+	SettlementInstructionUnknown = "UNKNOWN"
+)
+
+// ActivityType enum (OrderActivity) — the type of order activity.
+const (
+	ActivityTypeExecution   = "EXECUTION"
+	ActivityTypeOrderAction = "ORDER_ACTION"
+)
+
+// ExecutionType enum (OrderActivity) — the type of execution.
+const (
+	ExecutionTypeFill = "FILL"
+)
+
+// OptionPutCall enum — whether an option is a put or a call.
+const (
+	OptionPutCallPut     = "PUT"
+	OptionPutCallCall    = "CALL"
+	OptionPutCallUnknown = "UNKNOWN"
+)
+
+// OptionType enum — the style/type of the option.
+const (
+	OptionTypeVanilla = "VANILLA"
+	OptionTypeBinary  = "BINARY"
+	OptionTypeBarrier = "BARRIER"
+	OptionTypeUnknown = "UNKNOWN"
+)
+
+// ApiRuleAction enum (OrderValidationDetail) — the action taken by an API rule.
+const (
+	ApiRuleActionAccept  = "ACCEPT"
+	ApiRuleActionAlert   = "ALERT"
+	ApiRuleActionReject  = "REJECT"
+	ApiRuleActionReview  = "REVIEW"
+	ApiRuleActionUnknown = "UNKNOWN"
+)
+
+// FeeType enum — the type of fee applied to an order.
+const (
+	FeeTypeCommission             = "COMMISSION"
+	FeeTypeSecFee                 = "SEC_FEE"
+	FeeTypeStrFee                 = "STR_FEE"
+	FeeTypeRFee                   = "R_FEE"
+	FeeTypeCdscFee                = "CDSC_FEE"
+	FeeTypeOptRegFee              = "OPT_REG_FEE"
+	FeeTypeAdditionalFee          = "ADDITIONAL_FEE"
+	FeeTypeMiscellaneousFee       = "MISCELLANEOUS_FEE"
+	FeeTypeFTT                    = "FTT"
+	FeeTypeFuturesClearingFee     = "FUTURES_CLEARING_FEE"
+	FeeTypeFuturesDeskOfficeFee   = "FUTURES_DESK_OFFICE_FEE"
+	FeeTypeFuturesExchangeFee     = "FUTURES_EXCHANGE_FEE"
+	FeeTypeFuturesGlobexFee       = "FUTURES_GLOBEX_FEE"
+	FeeTypeFuturesNfaFee          = "FUTURES_NFA_FEE"
+	FeeTypeFuturesPitBrokerageFee = "FUTURES_PIT_BROKERAGE_FEE"
+	FeeTypeFuturesTransactionFee  = "FUTURES_TRANSACTION_FEE"
+	FeeTypeLowProceedsCommission  = "LOW_PROCEEDS_COMMISSION"
+	FeeTypeBaseCharge             = "BASE_CHARGE"
+	FeeTypeGeneralCharge          = "GENERAL_CHARGE"
+	FeeTypeGstFee                 = "GST_FEE"
+	FeeTypeTafFee                 = "TAF_FEE"
+	FeeTypeIndexOptionFee         = "INDEX_OPTION_FEE"
+	FeeTypeTefraTax               = "TEFRA_TAX"
+	FeeTypeStateTax               = "STATE_TAX"
+	FeeTypeUnknown                = "UNKNOWN"
+)
+
+// TransferItemPositionEffect enum (TransferItem) — the effect on the position for a transfer.
+const (
+	TransferItemPositionEffectOpening   = "OPENING"
+	TransferItemPositionEffectClosing   = "CLOSING"
+	TransferItemPositionEffectAutomatic = "AUTOMATIC"
+	TransferItemPositionEffectUnknown   = "UNKNOWN"
+)
+
+// ============================================================================
+// OpenAPI Enum Constants — Market Data API
+// The following constants correspond to the enum values defined in the
+// Schwab Market Data API OpenAPI specification.
+// ============================================================================
+
+// AssetMainType enum — the main asset type for quote responses.
+const (
+	AssetMainTypeBond         = "BOND"
+	AssetMainTypeEquity       = "EQUITY"
+	AssetMainTypeForex        = "FOREX"
+	AssetMainTypeFuture       = "FUTURE"
+	AssetMainTypeFutureOption = "FUTURE_OPTION"
+	AssetMainTypeIndex        = "INDEX"
+	AssetMainTypeMutualFund   = "MUTUAL_FUND"
+	AssetMainTypeOption       = "OPTION"
+)
+
+// EquityAssetSubType enum — asset sub-type for equity quotes.
+const (
+	EquityAssetSubTypeCOE = "COE"
+	EquityAssetSubTypePRF = "PRF"
+	EquityAssetSubTypeADR = "ADR"
+	EquityAssetSubTypeGDR = "GDR"
+	EquityAssetSubTypeCEF = "CEF"
+	EquityAssetSubTypeETF = "ETF"
+	EquityAssetSubTypeETN = "ETN"
+	EquityAssetSubTypeUIT = "UIT"
+	EquityAssetSubTypeWAR = "WAR"
+	EquityAssetSubTypeRGT = "RGT"
+)
+
+// MutualFundAssetSubType enum — asset sub-type for mutual fund quotes.
+const (
+	MutualFundAssetSubTypeOEF = "OEF"
+	MutualFundAssetSubTypeCEF = "CEF"
+	MutualFundAssetSubTypeMMF = "MMF"
+)
+
+// QuoteType enum — the quote type for quote responses.
+const (
+	QuoteTypeNBBO = "NBBO"
+	QuoteTypeNFL  = "NFL"
+)
+
+// DivFreq enum — dividend frequency for fundamental data.
+const (
+	DivFreqAnnually      = 1
+	DivFreqSemiAnnually  = 2
+	DivFreqThreeTimesYr  = 3
+	DivFreqQuarterly     = 4
+	DivFreqBiMonthly     = 6
+	DivFreqElevenTimesYr = 11
+	DivFreqMonthly       = 12
+)
+
+// FundStrategy enum — fund strategy for fundamental data.
+const (
+	FundStrategyActive      = "A"
+	FundStrategyLeveraged    = "L"
+	FundStrategyPassive      = "P"
+	FundStrategyQuantitative = "Q"
+	FundStrategyShort        = "S"
+)
+
+// MDContractType enum — option contract type (Put/Call) for market data responses.
+// Note: This is different from the chain query parameter ContractType (CALL/PUT/ALL).
+const (
+	MDContractTypePut  = "P"
+	MDContractTypeCall = "C"
+)
+
+// MDExpirationType enum — expiration type for market data option responses.
+const (
+	MDExpirationTypeMonthly   = "M"
+	MDExpirationTypeQuarterly = "Q"
+	MDExpirationTypeStandard  = "S"
+	MDExpirationTypeWeekly    = "W"
+)
+
+// MDSettlementType enum — settlement type for market data option responses.
+const (
+	MDSettlementTypeAM = "A"
+	MDSettlementTypePM = "P"
+)
+
+// MDExerciseType enum — exercise type for market data option responses.
+const (
+	MDExerciseTypeAmerican  = "A"
+	MDExerciseTypeEuropean  = "E"
 )
 
 // Market ID Constants (for /marketdata/v1/markets/{market_id})
@@ -268,18 +596,108 @@ const (
 	MarketIDForex  = "forex"
 )
 
-// Option Chain Contract Type Constants
+// Option Chain Contract Type Constants (for /marketdata/v1/chains contractType query param)
 const (
 	ContractTypeCall = "CALL"
 	ContractTypePut  = "PUT"
 	ContractTypeAll  = "ALL"
 )
 
+// ChainStrategy enum — strategy for option chain query parameter.
+const (
+	ChainStrategySingle     = "SINGLE"
+	ChainStrategyAnalytical = "ANALYTICAL"
+	ChainStrategyCovered    = "COVERED"
+	ChainStrategyVertical   = "VERTICAL"
+	ChainStrategyCalendar   = "CALENDAR"
+	ChainStrategyStrangle   = "STRANGLE"
+	ChainStrategyStraddle   = "STRADDLE"
+	ChainStrategyButterfly  = "BUTTERFLY"
+	ChainStrategyCondor     = "CONDOR"
+	ChainStrategyDiagonal   = "DIAGONAL"
+	ChainStrategyCollar     = "COLLAR"
+	ChainStrategyRoll       = "ROLL"
+)
+
+// ExpMonth enum — expiration month for option chain query parameter.
+const (
+	ExpMonthJan = "JAN"
+	ExpMonthFeb = "FEB"
+	ExpMonthMar = "MAR"
+	ExpMonthApr = "APR"
+	ExpMonthMay = "MAY"
+	ExpMonthJun = "JUN"
+	ExpMonthJul = "JUL"
+	ExpMonthAug = "AUG"
+	ExpMonthSep = "SEP"
+	ExpMonthOct = "OCT"
+	ExpMonthNov = "NOV"
+	ExpMonthDec = "DEC"
+	ExpMonthAll = "ALL"
+)
+
+// Entitlement enum — entitlement for option chain query parameter.
+const (
+	EntitlementPayingPro = "PN"
+	EntitlementNonPaying = "NP"
+	EntitlementPro       = "PP"
+)
+
+// SortType enum — sort type for movers query parameter.
+const (
+	SortTypeVolume            = "VOLUME"
+	SortTypeTrades            = "TRADES"
+	SortTypePercentChangeUp   = "PERCENT_CHANGE_UP"
+	SortTypePercentChangeDown = "PERCENT_CHANGE_DOWN"
+)
+
+// MoverFrequency enum — frequency for movers query parameter.
+const (
+	MoverFrequency0  = 0
+	MoverFrequency1  = 1
+	MoverFrequency5  = 5
+	MoverFrequency10 = 10
+	MoverFrequency30 = 30
+	MoverFrequency60 = 60
+)
+
+// MoverSymbol enum — symbol for movers path parameter.
+const (
+	MoverSymbolDJI        = "$DJI"
+	MoverSymbolCOMPX      = "$COMPX"
+	MoverSymbolSPX        = "$SPX"
+	MoverSymbolNYSE       = "NYSE"
+	MoverSymbolNASDAQ     = "NASDAQ"
+	MoverSymbolOTCBB      = "OTCBB"
+	MoverSymbolIndexAll   = "INDEX_ALL"
+	MoverSymbolEquityAll  = "EQUITY_ALL"
+	MoverSymbolOptionAll  = "OPTION_ALL"
+	MoverSymbolOptionPut  = "OPTION_PUT"
+	MoverSymbolOptionCall = "OPTION_CALL"
+)
+
+// PeriodType enum — period type for price history query parameter.
+const (
+	PeriodTypeDay   = "day"
+	PeriodTypeMonth = "month"
+	PeriodTypeYear  = "year"
+	PeriodTypeYTD   = "ytd"
+)
+
+// FrequencyType enum — frequency type for price history query parameter.
+const (
+	FrequencyTypeMinute  = "minute"
+	FrequencyTypeDaily   = "daily"
+	FrequencyTypeWeekly  = "weekly"
+	FrequencyTypeMonthly = "monthly"
+)
+
 // Instrument Projection Constants
 const (
 	ProjectionSymbolSearch = "symbol-search"
-	ProjectionSymbolRegex   = "symbol-regex"
+	ProjectionSymbolRegex  = "symbol-regex"
 	ProjectionDescSearch   = "desc-search"
-	ProjectionDescRegex     = "desc-regex"
-	ProjectionFundamental   = "fundamental"
+	ProjectionDescRegex    = "desc-regex"
+	ProjectionFundamental  = "fundamental"
+	ProjectionSearch       = "search"
 )

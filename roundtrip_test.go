@@ -8,8 +8,8 @@ import (
 
 // mockTokenSource implements TokenSource for testing.
 type mockTokenSource struct {
-	token  *Token
-	getErr error
+	token   *Token
+	getErr  error
 	saveErr error
 }
 
@@ -32,26 +32,26 @@ func TestToken_NeedsRefresh(t *testing.T) {
 	tests := []struct {
 		name      string
 		expiresIn time.Duration
-		buffer   time.Duration
-		want     bool
+		buffer    time.Duration
+		want      bool
 	}{
 		{
 			name:      "not expiring soon",
 			expiresIn: 5 * time.Minute,
-			buffer:   60 * time.Second,
-			want:     false,
+			buffer:    60 * time.Second,
+			want:      false,
 		},
 		{
 			name:      "needs refresh",
 			expiresIn: 30 * time.Second,
-			buffer:   60 * time.Second,
-			want:     true,
+			buffer:    60 * time.Second,
+			want:      true,
 		},
 		{
 			name:      "already expired",
 			expiresIn: -10 * time.Second,
-			buffer:   60 * time.Second,
-			want:     true,
+			buffer:    60 * time.Second,
+			want:      true,
 		},
 	}
 
@@ -73,7 +73,7 @@ func TestToken_Expired(t *testing.T) {
 	tests := []struct {
 		name      string
 		expiresIn time.Duration
-		want     bool
+		want      bool
 	}{
 		{"not expired", 5 * time.Minute, false},
 		{"expired", -10 * time.Second, true},
@@ -83,7 +83,7 @@ func TestToken_Expired(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tok := &Token{
 				AccessToken: "test",
-				ExpiresAt:  time.Now().Add(tt.expiresIn),
+				ExpiresAt:   time.Now().Add(tt.expiresIn),
 			}
 			if got := tok.Expired(); got != tt.want {
 				t.Errorf("Expired() = %v, want %v", got, tt.want)
