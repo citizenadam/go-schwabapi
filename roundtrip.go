@@ -48,9 +48,9 @@ type SchwabRoundTripper struct {
 	oauthConfig OAuthConfig
 
 	// Internal sync.
-	mu          sync.Mutex
-	refreshing  atomic.Bool
-	sfGroup     singleflight.Group
+	mu         sync.Mutex
+	refreshing atomic.Bool
+	sfGroup    singleflight.Group
 }
 
 // OAuthConfig contains the credentials needed to refresh tokens.
@@ -72,7 +72,7 @@ func NewSchwabRoundTripper(source TokenSource, config OAuthConfig, base http.Rou
 	}
 	return &SchwabRoundTripper{
 		Source:        source,
-		Base:         base,
+		Base:          base,
 		oauthConfig:   config,
 		RefreshBuffer: 60 * time.Second,
 	}
