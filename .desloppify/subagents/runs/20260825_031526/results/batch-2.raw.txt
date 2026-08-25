@@ -1,0 +1,131 @@
+{
+  "batch": "high_level_elegance",
+  "batch_index": 2,
+  "assessments": { "high_level_elegance": 58.0 },
+  "dimension_notes": {
+    "high_level_elegance": {
+      "evidence": [
+        "README.md documents an architecture that does not exist: imports 'github.com/citizenadam/go-schwabapi/pkg/client' and 'pkg/token' subpackages (no pkg/ dir exists), client.NewClient(logger)/token.NewManager('tokens.db', logger)/client.NewOAuthClient/client.NewAccounts/client.NewMarket, oauthClient.Authorize/Exchange/RefreshToken/RevokeToken, tokenManager.GetAccessToken/GetRefreshToken, client.OptionChainsRequest/PriceHistoryRequest request structs, and 'SQLite database' token persistence — none of these symbols or packages exist in the actual single flat 'schwabdev' package.",
+        "The actual runtime is a single flat package 'schwabdev' at the repo root with a monolithic Client (NewClient(appKey,appSecret,callbackURL,...) taking 7 params) and JSON-file/Postgres token storage (storage.go/postgres.go), not the subpackaged, request-struct, SQLite-based design the README shows.",
+        "Package doc comments at the entry points are wrong: schwabdev.go references 'schwabdev.NewStream(client)' (no such function; actual is NewStreamer), and client.go references 'stream.NewStreamer(logger, client.TokenManager(), infoSrc)' — a 'stream' package that does not exist.",
+        "Two parallel OAuth token-management subsystems duplicate the same refresh HTTP call: TokenManager.postOAuthToken (tokens.go:351) and SchwabRoundTripper.refreshOAuth (roundtrip.go:185) both POST to https://api.schwabapi.com/v1/oauth/token with Basic auth + form-encoded grant_type, with no shared helper. A change to the OAuth endpoint/headers requires edits in two places.",
+        "Three overlapping token abstractions blur ownership of the token-lifecycle domain: TokenStorage/TokenRecord (storage.go, Load/Save, used by TokenManager), TokenSource/Token (token_provider.go, GetToken/SaveToken, used by SchwabRoundTripper), and TokenProvider (stream.go, AccessToken() only, used by Streamer). The SPEC/PROPOSAL name the roundtrip interface 'TokenProvider' while the code names it 'TokenSource', and roundtrip.go's own comment says 'provider must implement TokenProvider (GetToken, SaveToken)' yet the param type is TokenSource.",
+        "Stale/dead public surface: exported error sentinels ErrTokensDBRequired, ErrAuthCallbackNotFunc, ErrInvalidTimeout, ErrUnsupportedTimeFormat, ErrStreamerUnavailable, ErrEncryptionFailed are never referenced outside errors.go; an entire block of exported WebSocket constants (WSPingInterval, WSPingTimeout, WSReconnectBackoffInitial/Max, WSCrashThreshold, WSLoopReadyWait, WSCloseTimeout, WSThreadJoinTimeout, AutoCheckerSleep) is unused while stream.go instead uses private pingInterval/pingTimeout duplicates — indicating the constants are historical leftovers, not the runtime source of truth.",
+        "Positive: file-level decomposition is largely domain-aligned (client.go=REST client, tokens.go=OAuth manager, stream.go=WebSocket, storage.go/postgres.go/storage_factory.go=persistence, types.go=API types, translate.go=field maps, encryption.go=token encryption, errors.go/constants.go=enums), and the TokenStorage interface with pluggable file/postgres backends + factory is a clean, well-scoped decomposition."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "architectural_change",
+      "confidence": "high",
+      "issues_preventing_higher_score": "README and package docs describe a non-existent architecture (subpackages, separate clients, SQLite, request structs); two parallel token subsystems duplicate OAuth refresh and use three overlapping interfaces; large dead/stale exported surface."
+    }
+  },
+  "dimension_judgment": {
+    "high_level_elegance": {
+      "dimension_character": "The file-level decomposition is broadly domain-aligned and the pluggable token-storage subsystem is clean, but the codebase's contracts and reference docs (README, package doc comments, SPEC) describe an architecture that does not exist, making the project's stated structure untrustworthy. Ownership of the token-lifecycle domain is blurred by two parallel OAuth subsystems (TokenManager + SchwabRoundTripper) that duplicate the refresh logic behind three overlapping interfaces, and a layer of dead exported constants/errors inflates the public surface beyond its actual responsibility.",
+      "score_rationale": "Scored in the lower-mid range because the most important high_level_elegance criterion — that project contracts and reference docs match runtime reality — fails severely: the README and entry-point doc comments reference subpackages, client constructors, methods, and storage backends that simply are not in the code. Real decomposition defects (duplicated OAuth refresh, three token interfaces, historical leftover constants) compound the doc unreliability, though the underlying per-file domain split and storage abstraction are reasonable."
+    }
+  },
+  "findings": [
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "readme_architecture_mismatch",
+      "summary": "README documents a subpackaged, multi-client, SQLite architecture that does not exist in the code",
+      "related_files": ["README.md", "client.go", "tokens.go", "storage.go", "go.mod"],
+      "evidence": [
+        "README imports 'github.com/citizenadam/go-schwabapi/pkg/client' and 'pkg/token' — no pkg/ directory exists; all code is one flat 'schwabdev' package at the repo root.",
+        "README calls client.NewClient(logger), token.NewManager('tokens.db', logger), client.NewOAuthClient, client.NewAccounts, client.NewMarket — none of these constructors exist; actual entry point is schwabdev.NewClient(appKey, appSecret, callbackURL, storagePath, encryption, timeout, callOnAuth).",
+        "README lists OAuth methods Authorize/Exchange/RefreshToken/RevokeToken and tokenManager.GetAccessToken/GetRefreshToken and a 'Preferences(ctx)' method — none exist on the actual Client/TokenManager.",
+        "README says tokens 'are stored in a SQLite database' — actual storage is JSON file (FileTokenStorage) or Postgres (PostgresTokenStorage); there is no SQLite dependency in go.mod.",
+        "README's market examples pass &client.OptionChainsRequest{...} request structs — actual OptionChains/PriceHistory take ~15+ loose positional pointer params, no request struct."
+      ],
+      "suggestion": "Rewrite the README's installation, examples, and API reference tables to match the actual single-package 'schwabdev' API (NewClient signature, Client methods, NewTokenManager/NewFileTokenStorage/NewStorageFromEnv, NewStreamer), and correct the storage description from SQLite to JSON-file/Postgres. A new engineer should be able to copy a README example and have it compile.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "package_doc_comments_wrong",
+      "summary": "Package doc comments reference non-existent functions and a non-existent 'stream' package",
+      "related_files": ["schwabdev.go", "client.go"],
+      "evidence": [
+        "schwabdev.go package doc: '// stream := schwabdev.NewStream(client)' — there is no NewStream function anywhere; the actual constructor is NewStreamer.",
+        "client.go package doc: '// streamer := stream.NewStreamer(logger, client.TokenManager(), infoSrc)' — references a 'stream' package that does not exist; the code lives in the same 'schwabdev' package.",
+        "The two package doc blocks also disagree with each other and with the README on the basic usage entry points; 'go doc'/pkg.go.dev surface these as the canonical usage example."
+      ],
+      "suggestion": "Correct both package doc comments to the real API: e.g. 'client, err := schwabdev.NewClient(appKey, appSecret, callbackURL, \"\", \"\", 0, nil)' and 'streamer := schwabdev.NewStreamer(logger, client.TokenManager(), infoSrc)'. Ensure the go doc examples compile against the actual symbols.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "dual_oauth_subsystems_duplicated_refresh",
+      "summary": "Two parallel token subsystems (TokenManager + SchwabRoundTripper) duplicate the OAuth refresh call behind disjoint interfaces",
+      "related_files": ["tokens.go", "roundtrip.go", "token_provider.go", "storage.go", "stream.go", "SPEC.md", "PROPOSAL.md"],
+      "evidence": [
+        "TokenManager.postOAuthToken (tokens.go:351) and SchwabRoundTripper.refreshOAuth (roundtrip.go:185) both build the identical POST to https://api.schwabapi.com/v1/oauth/token with Basic auth header and form-encoded grant_type=refresh_token, with no shared helper — a change to the OAuth endpoint or header scheme requires edits in two files.",
+        "Three overlapping token interfaces exist: TokenStorage (storage.go, Load/Save, TokenRecord), TokenSource (token_provider.go, GetToken/SaveToken, Token), and TokenProvider (stream.go, AccessToken() only) — the token-lifecycle domain is split across three abstractions with no clear ownership boundary, and token_provider.go:14 itself notes 'This is separate from the Streamer's TokenProvider interface'.",
+        "Naming is inconsistent with the spec: SPEC.md/PROPOSAL.md name the roundtrip interface 'TokenProvider', but the code names it 'TokenSource', and roundtrip.go:64 comment says 'provider must implement TokenProvider (GetToken, SaveToken)' while the parameter type is actually TokenSource (a different interface in stream.go).",
+        "Client wires only the TokenManager system (c.tokenManager in client.go); the SchwabRoundTripper/TokenSource system is never integrated into Client, so a new engineer cannot determine from the code alone which auth path is canonical or why both exist."
+      ],
+      "suggestion": "Unify the token lifecycle behind one storage interface and a single shared OAuth-refresh helper used by both TokenManager and SchwabRoundTripper (or have the RoundTripper delegate to TokenManager). Reconcile the interface name with SPEC.md, and fix the roundtrip.go doc comment to match the actual TokenSource type. This localizes OAuth changes to one place and makes ownership of token refresh predictable.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "dead_stale_exported_surface",
+      "summary": "Exported error sentinels and a block of WebSocket constants are unused while private duplicates run the runtime",
+      "related_files": ["errors.go", "constants.go", "stream.go", "encryption.go"],
+      "evidence": [
+        "Exported errors never referenced outside errors.go: ErrTokensDBRequired, ErrAuthCallbackNotFunc, ErrInvalidTimeout, ErrUnsupportedTimeFormat, ErrStreamerUnavailable, and ErrEncryptionFailed (which has a sibling ErrDecryptionFailed that IS used in encryption.go).",
+        "An entire block of exported WebSocket constants — WSPingInterval, WSPingTimeout, WSReconnectBackoffInitial, WSReconnectBackoffMax, WSCrashThreshold, WSLoopReadyWait, WSCloseTimeout, WSThreadJoinTimeout, and AutoCheckerSleep — have zero references outside constants.go, while stream.go instead defines private pingInterval (20s) and pingTimeout (10s) that shadow WSPingInterval (20s)/WSPingTimeout (30s) with different values.",
+        "The public surface (per api_surface list) is already large; these dead exports make it larger than its stated responsibility and mislead readers about what the runtime actually uses."
+      ],
+      "suggestion": "Remove the unused exported errors/constants or wire the runtime to them (e.g. have stream.go use WSPingInterval/WSPingTimeout instead of the private pingInterval/pingTimeout so the exported constants are the source of truth). Pruning the dead exports shrinks the public surface to what the code actually relies on.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The library was re-architected from a subpackaged design (pkg/client, pkg/token) into a single flat package, but the README and entry-point docs were never updated to match.",
+      "The SchwabRoundTripper/TokenSource subsystem was added as an opt-in alternative (per SPEC/PROPOSAL) alongside the existing TokenManager/TokenStorage without extracting a shared OAuth-refresh core, leaving two parallel implementations.",
+      "Streaming constants were exported in an earlier iteration and then superseded by private values in stream.go without removing the stale public set."
+    ],
+    "likely_symptoms": [
+      "readme_architecture_mismatch",
+      "package_doc_comments_wrong",
+      "dual_oauth_subsystems_duplicated_refresh",
+      "dead_stale_exported_surface"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "high_level_elegance": {
+      "add": [
+        {
+          "header": "Single flat package by design",
+          "description": "All production code lives in one flat 'schwabdev' package at the repo root (16 files, ~4875 LOC) with domain-aligned file naming — not the subpackaged layout the README implies.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Clean pluggable token storage",
+          "description": "TokenStorage interface with FileTokenStorage/PostgresTokenStorage backends and a NewStorageFromConfig/NewStorageFromEnv factory is a well-scoped, ownership-clear decomposition of persistence.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "README and docs describe a non-existent architecture",
+          "description": "README, package doc comments, and SPEC reference subpackages, separate client constructors, OAuth methods, request structs, and SQLite storage that do not exist — the reference docs are untrustworthy relative to the runtime.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

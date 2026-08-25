@@ -1,0 +1,62 @@
+{
+  "assessments": { "error_consistency": 74.0 },
+  "findings": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "roundtrip_panic_for_config_validation",
+      "summary": "NewSchwabRoundTripper panics on missing OAuth config instead of returning an error, inconsistent with the sentinel-error-and-return strategy used everywhere else",
+      "related_files": ["roundtrip.go", "tokens.go", "errors.go"],
+      "evidence": [
+        "roundtrip.go:71 — panic(\"schwabdev.NewSchwabRoundTripper: oauth config required\") when AppKey, AppSecret, or CallbackURL is empty",
+        "tokens.go:404-425 validateParams returns ErrAppKeyRequired / ErrAppSecretRequired / ErrCallbackURLRequired for the same validation, and NewTokenManager propagates the error via return nil, err",
+        "This is the only panic in the production codebase (grep for panic/os.Exit/log.Fatal returns only this one hit), making it a clear strategy outlier"
+      ],
+      "suggestion": "Change NewSchwabRoundTripper to return (*SchwabRoundTripper, error) and return ErrAppKeyRequired/ErrAppSecretRequired/ErrCallbackURLRequired (or a dedicated error) instead of panicking, matching the pattern in NewTokenManager",
+      "confidence": "high"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "dorequest_silent_unmarshal_and_status_swallow",
+      "summary": "doRequest silently swallows JSON unmarshal errors (Debug log, nil error) and never checks non-401 HTTP status codes, returning zero-valued results as success",
+      "related_files": ["client.go"],
+      "evidence": [
+        "client.go:228-231 — json.Unmarshal failure is logged at Debug level but the function returns (resp, nil), so callers get a zero-valued or partially populated result struct with no error",
+        "client.go:203 — only http.StatusUnauthorized (401) is checked (for retry); 400/403/404/500 etc. are never checked, so error responses are treated as successful",
+        "All API methods (e.g. LinkedAccounts at client.go:299) discard the *http.Response (_ = resp) and only check err, so a 5xx with non-JSON body silently yields an empty result and nil error",
+        "Inconsistent with postOAuthToken (tokens.go:392-397) and refreshOAuth (roundtrip.go:218-223) which DO check resp.StatusCode != http.StatusOK and return an error"
+      ],
+      "suggestion": "After unmarshaling, check resp.StatusCode >= 400 and return an error including the status code and response body; propagate the json.Unmarshal error instead of swallowing it (at minimum return fmt.Errorf(\"unmarshal response: %w\", err) when result != nil)",
+      "confidence": "high"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "unused_sentinel_errors_replaced_by_adhoc_strings",
+      "summary": "Four sentinel errors defined in errors.go are never used; ad-hoc fmt.Errorf strings or bare errors are used in their place, preventing errors.Is() checks by callers",
+      "related_files": ["errors.go", "client.go", "encryption.go"],
+      "evidence": [
+        "ErrStreamerUnavailable (errors.go:59) defined but unused; client.go:377 uses fmt.Errorf(\"no streamer info available\") instead",
+        "ErrUnsupportedTimeFormat (errors.go:53) defined but unused; client.go:437 uses fmt.Errorf(\"unsupported time format: %s\", format) instead",
+        "ErrInvalidTimeout (errors.go:50) defined but unused entirely — NewClient (client.go:52-53) silently defaults timeout instead of returning the error",
+        "ErrEncryptionFailed (errors.go:38) defined but unused; encryption.go:21 returns the bare err from fernet.EncryptAndSign without wrapping or using the sentinel",
+        "grep confirms none of these four identifiers appear outside errors.go in production code"
+      ],
+      "suggestion": "Either use the sentinels at the call sites (return ErrStreamerUnavailable, return ErrUnsupportedTimeFormat) or remove the dead definitions; for ErrEncryptionFailed, wrap it as fmt.Errorf(\"%w: %v\", ErrEncryptionFailed, err) to preserve both the sentinel and the underlying cause",
+      "confidence": "high"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "oauth_functions_inconsistent_error_wrapping",
+      "summary": "postOAuthToken and refreshOAuth inconsistently wrap errors — JSON parse errors get context but HTTP request/execution/body-read errors are returned bare, losing boundary context",
+      "related_files": ["tokens.go", "roundtrip.go"],
+      "evidence": [
+        "tokens.go:367-372 — http.NewRequest error returned as bare `return nil, err` with no context about the OAuth flow",
+        "tokens.go:376-378 — client.Do error returned bare; tokens.go:382-385 — io.ReadAll error returned bare",
+        "tokens.go:388-390 — json.Unmarshal error IS wrapped: fmt.Errorf(\"parse OAuth response: %w\", err)",
+        "roundtrip.go:193-216 shows the identical inconsistent pattern (bare for NewRequest/Do/ReadAll, wrapped for Unmarshal) — confirmed by the boilerplate_duplication scan signal between these two files",
+        "A caller receiving a bare http.NewRequest or io.ReadAll error has no indication it originated from the OAuth token exchange flow"
+      ],
+      "suggestion": "Wrap all errors in both functions with context, e.g. fmt.Errorf(\"oauth request create: %w\", err), fmt.Errorf(\"oauth request: %w\", err), fmt.Errorf(\"oauth read body: %w\", err), so every error from the OAuth flow carries boundary context",
+      "confidence": "medium"
+    }
+  ]
+}

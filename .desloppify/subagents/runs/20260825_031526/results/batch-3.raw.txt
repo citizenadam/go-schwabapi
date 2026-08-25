@@ -1,0 +1,75 @@
+{
+  "assessments": { "convention_outlier": 75.0 },
+  "findings": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "oauth_exchange_duplicated_divergent",
+      "summary": "OAuth token-exchange request/parse logic is duplicated verbatim between two modules, and the two copies diverge in URL sourcing and context handling",
+      "related_files": ["roundtrip.go", "tokens.go", "constants.go"],
+      "evidence": [
+        "roundtrip.go refreshOAuth (lines 185-242) and tokens.go postOAuthToken (lines 351-400) repeat the same ~22-line block: base64 basic-auth header, url.Values form encoding, client.Do, io.ReadAll, json.Unmarshal into map[string]any, and the error_description/non-200 handling (flagged boilerplate window at roundtrip.go:202 / tokens.go:376).",
+        "The two copies diverge in convention: roundtrip.go hardcodes the endpoint literal \"https://api.schwabapi.com/v1/oauth/token\" (line 194) and builds the request with http.NewRequestWithContext; tokens.go uses the configurable tm.oauthTokenURL (backed by the shared OAuthTokenEndpoint constant) and http.NewRequest (no context propagation).",
+        "A shared OAuthTokenEndpoint constant exists (constants.go:19) for exactly this URL, but roundtrip.go bypasses it — one sibling uses the constant, the other hardcodes the same string, so the same value lives in two forms.",
+        "tokens.go postOAuthToken supports the authorization_code grant while roundtrip.go refreshOAuth only handles refresh_token, so the two siblings implement different behavioral protocols for the same OAuth exchange."
+      ],
+      "suggestion": "Extract a single internal OAuth-token-POST helper (build form + basic-auth header, execute with context, read body, unmarshal, handle non-200) that both TokenManager and SchwabRoundTripper call, passing credentials and grant type; have roundtrip.go use OAuthTokenEndpoint instead of a hardcoded literal and http.NewRequestWithContext so the context is honored in both paths.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "error_sentinel_python_port_island",
+      "summary": "Validation-error sentinels retain Python-port conventions ([Schwabdev] prefix, snake_case param names, 'None'/'callable function') inconsistent with the Go-idiomatic style used by the rest of errors.go, plus dead sentinels",
+      "related_files": ["errors.go"],
+      "evidence": [
+        "First error block uses a '[Schwabdev]' prefix and Python idioms: ErrAppKeyRequired = \"[Schwabdev] app_key cannot be None.\", ErrAuthCallbackNotFunc = \"[Schwabdev] call_on_notify must be a callable function.\" — the snake_case names (app_key, app_secret, callback_url, tokens_db, call_on_notify) do not match the actual Go identifiers (appKey, appSecret, callbackURL, callOnAuth), and 'None'/'callable function' are Python terminology, not Go.",
+        "The remaining sentinel blocks in the same file drop the prefix and use Go-idiomatic English: ErrEncryptionFailed = \"Failed to encrypt token data.\", ErrInvalidGrantType = \"Invalid grant type; ...\", ErrStreamerUnavailable = \"Streamer info unavailable\" — a style island within one file.",
+        "Residue from the port: ErrTokensDBRequired (\"tokens_db cannot be None.\") and ErrAuthCallbackNotFunc have zero references outside errors.go — the tokens_db and call_on_notify concepts they name do not exist in the Go API. ErrTokensDBEndsWithSlash also references the removed 'tokens_db' name while the actual parameter is storagePath."
+      ],
+      "suggestion": "Rewrite the validation-error messages to match the Go-idiomatic style used by the other sentinels (drop the [Schwabdev] prefix, reference the actual Go parameter names, replace 'None'/'callable function' with 'empty'/'required'/'a function'); remove the unused ErrTokensDBRequired and ErrAuthCallbackNotFunc sentinels or wire them into the validation paths they describe.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "unused_ws_constants",
+      "summary": "Eight exported WebSocket constants in constants.go are never used; stream.go defines its own unexported consts and hardcodes the same magnitudes under different names (and one value diverges)",
+      "related_files": ["constants.go", "stream.go"],
+      "evidence": [
+        "constants.go exports WSPingInterval, WSPingTimeout, WSReconnectBackoffInitial, WSReconnectBackoffMax, WSCrashThreshold, WSLoopReadyWait, WSCloseTimeout, WSThreadJoinTimeout — grep confirms zero usages outside constants.go (neither production code nor tests reference them).",
+        "stream.go instead declares unexported consts pingInterval = 20*time.Second and pingTimeout = 10*time.Second (lines 19-20) and hardcodes the backoff magnitudes in NewReconnectManager: baseBackoff 2s, maxBackoff 120s, minUptime 90s (lines 388-391) — the same magnitudes as WSReconnectBackoffInitial (2s), WSReconnectBackoffMax (120s), WSCrashThreshold (90s) but under different names.",
+        "The dead exports are actively misleading: WSPingTimeout is 30s while the live pingTimeout is 10s, so the exported 'convention' and the actual runtime value disagree.",
+        "This creates a style island where constants.go's WS* naming convention is disconnected from stream.go, the very module that implements the WebSocket behavior it claims to document."
+      ],
+      "suggestion": "Either wire the WS* constants into stream.go's ping loop and ReconnectManager (replacing the unexported consts and hardcoded literals, and reconciling the divergent pingTimeout value), or remove the dead WS* exports from constants.go so the file does not advertise a convention the code does not follow.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "parallel_token_interfaces",
+      "summary": "Three token-access interfaces (TokenStorage, TokenSource, TokenProvider) use divergent method names and two value types for the same domain concept",
+      "related_files": ["storage.go", "token_provider.go", "stream.go"],
+      "evidence": [
+        "TokenStorage (storage.go): Load(ctx) (*TokenRecord, error) / Save(ctx, TokenRecord) error / Close() error — the persistence backend contract used by TokenManager.",
+        "TokenSource (token_provider.go): GetToken(ctx) (*Token, error) / SaveToken(ctx, *Token) error — the read-write seam used by SchwabRoundTripper.",
+        "TokenProvider (stream.go): AccessToken() (string, error) — the read-only seam used by Streamer.",
+        "Two value types represent the same OAuth token concept with incompatible shapes: Token {AccessToken, RefreshToken, ExpiresAt} vs TokenRecord {AccessToken, RefreshToken, IDToken, ExpiresIn, TokenType, Scope, AccessTokenIssued, RefreshTokenIssued}.",
+        "token_provider.go line 14 explicitly acknowledges the divergence ('Note: This is separate from the Streamer's TokenProvider interface...') but gives no rationale for the method-name split (Load/Save vs GetToken/SaveToken) or the Token/TokenRecord type split."
+      ],
+      "suggestion": "Document the distinct role of each interface (TokenProvider = minimal read-only seam for the streamer; TokenStorage = full persistence contract; TokenSource = round-tripper read-write seam) at the interface definitions; at minimum reconcile the naming drift (Load/Save vs GetToken/SaveToken) or record why the Token vs TokenRecord value-type split is intentional. Do not add a unifying facade — just make the convention explicit.",
+      "confidence": "medium"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "package_doc_reference_drift",
+      "summary": "Package doc comment is declared in multiple files, and the doc/example comments reference function and interface names that do not exist or use the wrong package qualifier",
+      "related_files": ["schwabdev.go", "client.go", "roundtrip.go", "translate.go"],
+      "evidence": [
+        "Both schwabdev.go:1 and client.go:1 begin with '// Package schwabdev provides a Go client for the Charles Schwab API.' immediately before `package schwabdev`, and translate.go:1 opens with '// Package schwabdev - Stream Field Mappings' — Go convention expects exactly one package doc comment.",
+        "schwabdev.go:11 example references schwabdev.NewStream(client), but NewStream does not exist — the exported constructor is NewStreamer.",
+        "client.go:11 and client.go:121 examples reference stream.NewStreamer(...) using the package qualifier 'stream', but the package is 'schwabdev'; client.go:120 similarly names 'the stream.TokenProvider interface' with the wrong package qualifier.",
+        "roundtrip.go:64 comment states 'provider must implement TokenProvider (GetToken, SaveToken)', but the actual parameter is `source TokenSource` and the TokenSource interface is the one with GetToken/SaveToken; the TokenProvider interface (stream.go) has only AccessToken(). The comment names the wrong interface."
+      ],
+      "suggestion": "Consolidate to a single package doc comment (keep it in schwabdev.go or move to doc.go; convert client.go's and translate.go's leading comments to plain file headers). Correct the stale references: NewStream -> NewStreamer, stream.NewStreamer -> schwabdev.NewStreamer, stream.TokenProvider -> schwabdev.TokenProvider, and roundtrip.go's 'TokenProvider (GetToken, SaveToken)' -> 'TokenSource'.",
+      "confidence": "high"
+    }
+  ]
+}

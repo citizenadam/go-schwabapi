@@ -1,0 +1,47 @@
+{
+  "assessments": {
+    "naming_quality": 87.0
+  },
+  "findings": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "getNewTokens_name_mismatch",
+      "summary": "getNewTokens() returns an OAuth authorization code, not tokens — name/behavior mismatch",
+      "related_files": ["tokens.go"],
+      "evidence": [
+        "Function getNewTokens() (line 324) builds an OAuth authorize URL, prompts the user for a callback URL, and returns parsed.Query().Get(\"code\") — a single authorization code string, not tokens.",
+        "The caller updateRefreshToken() (line 309) passes the return value directly to postOAuthToken(\"authorization_code\", authCode), confirming the return is an auth code.",
+        "A developer searching for where tokens are obtained would find getNewTokens and reasonably expect it to return token data, not an intermediate auth code."
+      ],
+      "suggestion": "Rename getNewTokens to getAuthorizationCode (or getAuthCode) to accurately describe what it returns.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "error_messages_python_vocabulary",
+      "summary": "Error message strings use Python vocabulary ('None', 'callable function', snake_case param names) diverging from Go norms",
+      "related_files": ["errors.go"],
+      "evidence": [
+        "ErrAppKeyRequired message says 'app_key cannot be None' — 'None' is Python's nil concept; Go uses 'nil'. The parameter name 'app_key' uses snake_case (Python convention) while the Go code uses camelCase (appKey).",
+        "ErrAuthCallbackNotFunc message says 'call_on_notify must be a callable function' — 'call_on_notify' is a parameter name that does not exist anywhere in the Go codebase (the actual Go parameter is callOnAuth). 'callable' is a Python concept.",
+        "ErrTokensDBRequired message says 'tokens_db cannot be None' — same 'None' and snake_case divergence. The Go code uses no variable named tokens_db.",
+        "Code comments throughout client.go reference 'matches Python's _parse_params() behavior', confirming these messages were carried over from a Python implementation without adapting to Go vocabulary."
+      ],
+      "suggestion": "Rewrite error message strings to use Go vocabulary: 'nil' instead of 'None', use the actual Go parameter names (appKey, callOnAuth), and replace 'callable function' with 'function'.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "streamer_tokens_field_misleading",
+      "summary": "Streamer field 'tokens' (plural noun) holds a TokenProvider interface, suggesting it stores token values rather than a provider",
+      "related_files": ["stream.go"],
+      "evidence": [
+        "Streamer struct (line 42) declares 'tokens TokenProvider' — the field is an interface with a single method AccessToken() (string, error), not a collection of tokens.",
+        "Compare with SchwabRoundTripper in roundtrip.go which names the equivalent field 'Source TokenSource' — clear and accurate.",
+        "The name 'tokens' (plural) implies a collection or holder of token data, when the field is actually a source/provider that dispenses fresh access tokens on demand."
+      ],
+      "suggestion": "Rename the field from 'tokens' to 'tokenProvider' or 'tokenSource' to match the interface type and the convention used in SchwabRoundTripper.Source.",
+      "confidence": "medium"
+    }
+  ]
+}

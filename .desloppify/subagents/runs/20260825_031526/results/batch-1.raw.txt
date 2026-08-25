@@ -1,0 +1,125 @@
+{
+  "assessments": {
+    "cross_module_architecture": 72.0
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "Single-package library (16 production files, ~4875 LOC) — no import cycles possible, clear conceptual layering: types/constants/errors as leaves, storage layer, token management, client, streamer.",
+        "TokenStorage interface (storage.go) is a clean pluggable boundary with two implementations (FileTokenStorage, PostgresTokenStorage) and a factory (storage_factory.go) — well-factored storage subsystem.",
+        "TokenProvider interface (stream.go, AccessToken()) cleanly decouples Streamer from TokenManager — streamer depends on a one-method interface, not a concrete type.",
+        "Two parallel token subsystems exist: Client→TokenManager→TokenStorage path (tokens.go) and SchwabRoundTripper→TokenSource path (roundtrip.go). These are fully disconnected — TokenManager satisfies TokenProvider but not TokenSource, so no code bridges the two paths.",
+        "OAuth refresh HTTP logic is duplicated verbatim between tokens.go postOAuthToken() and roundtrip.go refreshOAuth(): both build http.Client with OAuthTokenRequestTimeout, base64-encode appKey:appSecret, set grant_type/refresh_token in url.Values, POST with Basic auth + form-urlencoded, parse map[string]any. roundtrip.go hardcodes the endpoint URL instead of using the shared OAuthTokenEndpoint constant.",
+        "Three disjoint token abstractions (TokenProvider, TokenSource, TokenStorage) serve overlapping purposes with no shared base or adapter. The Token struct (token_provider.go) and TokenRecord struct (storage.go) are separate representations with no mapping between them.",
+        "constants.go defines 8 WebSocket constants (WSPingInterval, WSPingTimeout=30s, WSReconnectBackoffInitial, WSReconnectBackoffMax, WSCrashThreshold, WSLoopReadyWait, WSCloseTimeout, WSThreadJoinTimeout) that stream.go completely ignores — it defines its own pingInterval=20s, pingTimeout=10s and hardcodes backoff values in ReconnectManager. WSPingTimeout (30s) diverges semantically from stream.go's pingTimeout (10s)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Duplicated OAuth refresh logic across tokens.go and roundtrip.go creates a maintenance and security divergence risk; three disjoint token interfaces (TokenProvider/TokenSource/TokenStorage) with no bridging adapter leave the two integration paths disconnected and force users to write their own adapter; dead WebSocket constants in constants.go drift semantically from stream.go's runtime values (pingTimeout 30s vs 10s)."
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The storage and streaming boundaries are well-factored — TokenStorage is a clean pluggable interface with file/postgres implementations and a factory, and TokenProvider cleanly decouples the Streamer from TokenManager. However, two parallel token subsystems (TokenManager vs SchwabRoundTripper) duplicate the OAuth refresh HTTP logic and use three disjoint interfaces (TokenProvider, TokenSource, TokenStorage) with no shared base or bridging adapter, leaving the integration paths disconnected. Dead WebSocket constants in constants.go that stream.go ignores — with a semantic pingTimeout divergence (30s documented vs 10s runtime) — show a documented contract drifting from runtime.",
+      "score_rationale": "The core architecture is solid for a single-package library: clean storage abstraction, one-method TokenProvider interface for the streamer, and clear client/streamer separation. But the parallel token paths with verbatim-duplicated OAuth refresh logic (one copy hardcoding the endpoint URL instead of using the shared constant), three unconnected token interfaces, and dead/drifted WebSocket constants represent real boundary integrity problems that a new developer cannot resolve in 30 seconds. Score sits in the lower-middle range because the duplication is behavior-bearing (security-relevant token exchange) rather than cosmetic."
+    }
+  },
+  "findings": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "duplicated_oauth_refresh",
+      "summary": "OAuth token-refresh HTTP logic is duplicated verbatim between tokens.go and roundtrip.go with one copy hardcoding the endpoint URL",
+      "related_files": ["tokens.go", "roundtrip.go", "constants.go"],
+      "evidence": [
+        "tokens.go postOAuthToken() (lines 351-400) and roundtrip.go refreshOAuth() (lines 185-242) both construct &http.Client{Timeout: OAuthTokenRequestTimeout}, base64-encode appKey+\":\"+appSecret, set grant_type and refresh_token in url.Values, POST with Basic auth and application/x-www-form-urlencoded, and parse the response body as map[string]any.",
+        "roundtrip.go line 194 hardcodes \"https://api.schwabapi.com/v1/oauth/token\" as a string literal instead of referencing the shared OAuthTokenEndpoint constant from constants.go (line 19). tokens.go uses the constant via the oauthTokenURL field (line 77).",
+        "roundtrip.go refreshOAuth only handles the refresh_token grant, while tokens.go postOAuthToken handles both authorization_code and refresh_token — the two implementations have already diverged in capability.",
+        "The blind packet existing_issues flags: boilerplate_duplication block repeated across 2 files (window 22 lines) referencing roundtrip.go.",
+        "Both implementations extract access_token/refresh_token/expires_in from the same map[string]any response but construct different result types (map[string]any vs *Token), so a fix to response parsing must be applied in two places."
+      ],
+      "suggestion": "Extract a single shared OAuth token-exchange function (e.g., exchangeOAuthToken(ctx, endpoint, appKey, appSecret, grantType, code) (*oauthResponse, error)) into a shared file or tokens.go, and have both TokenManager.postOAuthToken and SchwabRoundTripper.refreshOAuth delegate to it. Use the OAuthTokenEndpoint constant in roundtrip.go instead of the hardcoded string. This eliminates the divergence risk and ensures the shared constant is the single source of truth for the endpoint.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "disjoint_token_interfaces",
+      "summary": "Three token abstractions (TokenProvider, TokenSource, TokenStorage) serve overlapping purposes with no shared base or bridging adapter",
+      "related_files": ["stream.go", "token_provider.go", "storage.go", "tokens.go", "roundtrip.go"],
+      "evidence": [
+        "TokenProvider (stream.go line 26): AccessToken() (string, error) — consumed by Streamer.",
+        "TokenSource (token_provider.go line 16): GetToken(ctx) (*Token, error) + SaveToken(ctx, *Token) error — consumed by SchwabRoundTripper.",
+        "TokenStorage (storage.go line 34): Load(ctx) (*TokenRecord, error) + Save(ctx, TokenRecord) error + Close() error — consumed by TokenManager.",
+        "TokenManager satisfies TokenProvider (has AccessToken()) but does NOT satisfy TokenSource (no GetToken/SaveToken methods), so the Client→TokenManager path and the SchwabRoundTripper→TokenSource path are fully disconnected.",
+        "The Token struct (token_provider.go line 28: AccessToken, RefreshToken, ExpiresAt) is a separate representation from TokenRecord (storage.go line 18: AccessToken, RefreshToken, IDToken, ExpiresIn, TokenType, Scope, AccessTokenIssued, RefreshTokenIssued) with no mapping between them.",
+        "token_provider.go line 14 explicitly acknowledges the disconnect: 'Note: This is separate from the Streamer's TokenProvider interface which only returns AccessToken() string.' but no adapter is provided.",
+        "roundtrip.go line 64 comment says 'provider must implement TokenProvider (GetToken, SaveToken)' but the actual parameter type is TokenSource and TokenProvider only has AccessToken() — the comment itself confuses the two interfaces."
+      ],
+      "suggestion": "Either (a) make TokenManager implement TokenSource by adding GetToken/SaveToken methods that map between the in-memory token state and the Token struct, so users can wire SchwabRoundTripper directly to a TokenManager; or (b) provide a documented adapter type (e.g., TokenManagerSource) that wraps *TokenManager to satisfy TokenSource. Additionally fix the roundtrip.go line 64 comment to reference TokenSource, not TokenProvider.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "dead_ws_constants_drift",
+      "summary": "constants.go defines 8 WebSocket constants that stream.go ignores, with pingTimeout diverging semantically (30s documented vs 10s runtime)",
+      "related_files": ["constants.go", "stream.go"],
+      "evidence": [
+        "constants.go defines WSPingInterval=20s, WSPingTimeout=30s, WSReconnectBackoffInitial=2s, WSReconnectBackoffMax=120s, WSCrashThreshold=90s, WSLoopReadyWait=4s, WSCloseTimeout=5s, WSThreadJoinTimeout=5s — none are referenced anywhere outside constants.go.",
+        "stream.go lines 18-21 define its own pingInterval=20s and pingTimeout=10s as unexported consts, ignoring WSPingInterval and WSPingTimeout. The pingTimeout values diverge: 10s (runtime) vs 30s (documented in constants.go).",
+        "ReconnectManager (stream.go lines 386-393) hardcodes baseBackoff=2s, maxBackoff=120s, minUptime=90s — matching WSReconnectBackoffInitial, WSReconnectBackoffMax, and WSCrashThreshold by value but not by reference.",
+        "WSLoopReadyWait, WSCloseTimeout, and WSThreadJoinTimeout have zero usage anywhere in the codebase — they appear to be dead remnants of a prior implementation (the comments reference 'event loop' and 'streaming thread' patterns not present in the current Go code)."
+      ],
+      "suggestion": "Either wire stream.go to use the constants from constants.go (replacing pingInterval/pingTimeout with WSPingInterval/WSPingTimeout and ReconnectManager's hardcoded values with the WS* constants), or remove the dead constants entirely. If the 10s pingTimeout is the intended runtime value, update WSPingTimeout to 10s or remove it. Remove WSLoopReadyWait, WSCloseTimeout, and WSThreadJoinTimeout if no code path uses them.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "RoundTripper was added as an alternative integration path without refactoring the existing OAuth refresh logic into a shared helper — copy-paste evolution.",
+      "Token abstractions were introduced incrementally (TokenProvider for streaming, TokenSource for roundtripper, TokenStorage for persistence) without consolidating around a common token model.",
+      "WebSocket constants were defined speculatively in constants.go (possibly ported from a Python codebase that uses event-loop/threading patterns) but never wired into the Go stream implementation."
+    ],
+    "likely_symptoms": [
+      "duplicated_oauth_refresh",
+      "disjoint_token_interfaces",
+      "dead_ws_constants_drift"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Clean TokenStorage pluggable boundary",
+          "description": "TokenStorage interface with FileTokenStorage, PostgresTokenStorage, and a storage_factory is a well-factored persistence boundary — adding a new backend requires only implementing three methods.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Streamer decoupled via TokenProvider",
+          "description": "Streamer depends on a one-method TokenProvider interface rather than a concrete TokenManager, making the streaming subsystem independently testable and wireable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Parallel token subsystems with duplicated OAuth logic",
+          "description": "TokenManager (tokens.go) and SchwabRoundTripper (roundtrip.go) each independently implement the OAuth token-refresh HTTP flow. The two paths use disjoint interfaces (TokenProvider/TokenSource/TokenStorage) with no bridging adapter, leaving them disconnected.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Dead WebSocket constants with semantic drift",
+          "description": "constants.go defines 8 WS constants that stream.go ignores in favor of local values. WSPingTimeout (30s) diverges from the runtime pingTimeout (10s), and three constants have zero usage — a documented contract drifting from runtime.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}
