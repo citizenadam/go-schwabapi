@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-08-25T02:33:57+00:00",
-  "updated": "2026-08-25T03:11:53+00:00",
+  "updated": "2026-08-25T03:12:56+00:00",
   "queue_order": [],
   "deferred": [],
   "skipped": {},
@@ -1372,6 +1372,24 @@
       "actor": "user",
       "note": null,
       "detail": {}
+    },
+    {
+      "timestamp": "2026-08-25T03:12:56+00:00",
+      "action": "commit_record",
+      "issue_ids": [
+        "structural::types_test.go",
+        "structural::types.go",
+        "structural::client.go",
+        "structural::integration_test.go",
+        "structural::constants.go"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "sha": "fa840cbe1bca",
+        "branch": "desloppify-API-SPEC"
+      }
     }
   ],
   "epic_triage_meta": {},
@@ -1435,15 +1453,23 @@
       "recorded_at": "2026-08-25T03:07:21+00:00",
       "note": null,
       "cluster_name": null
+    },
+    {
+      "sha": "fa840cbe1bca",
+      "branch": "desloppify-API-SPEC",
+      "issue_ids": [
+        "structural::types_test.go",
+        "structural::types.go",
+        "structural::client.go",
+        "structural::integration_test.go",
+        "structural::constants.go"
+      ],
+      "recorded_at": "2026-08-25T03:12:56+00:00",
+      "note": null,
+      "cluster_name": null
     }
   ],
-  "uncommitted_issues": [
-    "structural::types_test.go",
-    "structural::types.go",
-    "structural::client.go",
-    "structural::integration_test.go",
-    "structural::constants.go"
-  ],
+  "uncommitted_issues": [],
   "commit_tracking_branch": null,
   "scan_count_at_plan_start": 1
 }

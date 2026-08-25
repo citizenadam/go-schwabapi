@@ -1,211 +1,10 @@
 {
   "version": 8,
   "created": "2026-08-25T02:33:57+00:00",
-  "updated": "2026-08-25T03:10:40+00:00",
+  "updated": "2026-08-25T03:11:53+00:00",
   "queue_order": [],
   "deferred": [],
-  "skipped": {
-    "subjective_review::.::abstraction_fitness": {
-      "issue_id": "subjective_review::.::abstraction_fitness",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::ai_generated_debt": {
-      "issue_id": "subjective_review::.::ai_generated_debt",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::api_surface_coherence": {
-      "issue_id": "subjective_review::.::api_surface_coherence",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::authorization_consistency": {
-      "issue_id": "subjective_review::.::authorization_consistency",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::contract_coherence": {
-      "issue_id": "subjective_review::.::contract_coherence",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::convention_outlier": {
-      "issue_id": "subjective_review::.::convention_outlier",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::cross_module_architecture": {
-      "issue_id": "subjective_review::.::cross_module_architecture",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::dependency_health": {
-      "issue_id": "subjective_review::.::dependency_health",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::design_coherence": {
-      "issue_id": "subjective_review::.::design_coherence",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::error_consistency": {
-      "issue_id": "subjective_review::.::error_consistency",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::high_level_elegance": {
-      "issue_id": "subjective_review::.::high_level_elegance",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::incomplete_migration": {
-      "issue_id": "subjective_review::.::incomplete_migration",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::initialization_coupling": {
-      "issue_id": "subjective_review::.::initialization_coupling",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::logic_clarity": {
-      "issue_id": "subjective_review::.::logic_clarity",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::low_level_elegance": {
-      "issue_id": "subjective_review::.::low_level_elegance",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::mid_level_elegance": {
-      "issue_id": "subjective_review::.::mid_level_elegance",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::naming_quality": {
-      "issue_id": "subjective_review::.::naming_quality",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::package_organization": {
-      "issue_id": "subjective_review::.::package_organization",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::test_strategy": {
-      "issue_id": "subjective_review::.::test_strategy",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    },
-    "subjective_review::.::type_safety": {
-      "issue_id": "subjective_review::.::type_safety",
-      "kind": "temporary",
-      "reason": "Will run review after mechanical fixes",
-      "note": null,
-      "attestation": "I have actually reflected and I am not deferring this for lazy reasons.",
-      "created_at": "2026-08-25T02:42:19+00:00",
-      "review_after": null,
-      "skipped_at_scan": 1
-    }
-  },
+  "skipped": {},
   "active_cluster": null,
   "overrides": {
     "unused::encryption.go::unused_import::6": {
@@ -1542,6 +1341,36 @@
       "cluster_name": null,
       "actor": "user",
       "note": "Constants.go is 703 LOC containing all OpenAPI enum constants organized by domain sections. Kept in one file for spec alignment clarity.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-08-25T03:11:53+00:00",
+      "action": "backlog",
+      "issue_ids": [
+        "subjective_review::.::abstraction_fitness",
+        "subjective_review::.::ai_generated_debt",
+        "subjective_review::.::api_surface_coherence",
+        "subjective_review::.::authorization_consistency",
+        "subjective_review::.::contract_coherence",
+        "subjective_review::.::convention_outlier",
+        "subjective_review::.::cross_module_architecture",
+        "subjective_review::.::dependency_health",
+        "subjective_review::.::design_coherence",
+        "subjective_review::.::error_consistency",
+        "subjective_review::.::high_level_elegance",
+        "subjective_review::.::incomplete_migration",
+        "subjective_review::.::initialization_coupling",
+        "subjective_review::.::logic_clarity",
+        "subjective_review::.::low_level_elegance",
+        "subjective_review::.::mid_level_elegance",
+        "subjective_review::.::naming_quality",
+        "subjective_review::.::package_organization",
+        "subjective_review::.::test_strategy",
+        "subjective_review::.::type_safety"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
       "detail": {}
     }
   ],
