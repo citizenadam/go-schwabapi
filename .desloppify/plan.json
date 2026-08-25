@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-08-25T02:33:57+00:00",
-  "updated": "2026-08-25T02:45:10+00:00",
+  "updated": "2026-08-25T02:45:38+00:00",
   "queue_order": [
     "test_coverage::storage.go::untested_module",
     "test_coverage::postgres.go::untested_module",
@@ -970,6 +970,22 @@
       "actor": "user",
       "note": "False positive: _ github.com/lib/pq is a blank import required by Go database/sql to register the postgres driver at runtime",
       "detail": {}
+    },
+    {
+      "timestamp": "2026-08-25T02:45:38+00:00",
+      "action": "commit_record",
+      "issue_ids": [
+        "unused::postgres.go::unused_import::9",
+        "unused::storage_factory.go::unused_import::9",
+        "unused::tokens.go::unused_import::16"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "sha": "ae00dc50a42f",
+        "branch": "desloppify-API-SPEC"
+      }
     }
   ],
   "epic_triage_meta": {},
@@ -994,13 +1010,21 @@
       "recorded_at": "2026-08-25T02:44:53+00:00",
       "note": null,
       "cluster_name": null
+    },
+    {
+      "sha": "ae00dc50a42f",
+      "branch": "desloppify-API-SPEC",
+      "issue_ids": [
+        "unused::postgres.go::unused_import::9",
+        "unused::storage_factory.go::unused_import::9",
+        "unused::tokens.go::unused_import::16"
+      ],
+      "recorded_at": "2026-08-25T02:45:38+00:00",
+      "note": null,
+      "cluster_name": null
     }
   ],
-  "uncommitted_issues": [
-    "unused::postgres.go::unused_import::9",
-    "unused::storage_factory.go::unused_import::9",
-    "unused::tokens.go::unused_import::16"
-  ],
+  "uncommitted_issues": [],
   "commit_tracking_branch": null,
   "scan_count_at_plan_start": 1
 }

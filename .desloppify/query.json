@@ -1,23 +1,104 @@
 {
-  "command": "resolve",
-  "patterns": [
-    "unused::tokens.go"
+  "command": "next",
+  "items": [
+    {
+      "id": "auto/test_coverage-untested_module",
+      "action_type": "refactor",
+      "summary": "Fix 8 test coverage issues",
+      "member_count": 8,
+      "members": [
+        {
+          "id": "test_coverage::storage.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "storage.go",
+          "summary": "Untested module (136 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::storage.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::postgres.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "postgres.go",
+          "summary": "Untested module (186 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::postgres.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::storage_factory.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "storage_factory.go",
+          "summary": "Untested module (122 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::storage_factory.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::encryption.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "encryption.go",
+          "summary": "Untested module (78 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::encryption.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::stream.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "stream.go",
+          "summary": "Untested module (450 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::stream.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::enums.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "enums.go",
+          "summary": "Untested module (16 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::enums.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::token_refresh.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "token_refresh.go",
+          "summary": "Untested module (88 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::token_refresh.go::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::token_provider.go::untested_module",
+          "confidence": "high",
+          "detector": "test_coverage",
+          "file": "token_provider.go",
+          "summary": "Untested module (43 LOC, 0 importers)",
+          "status": "open",
+          "kind": "issue",
+          "primary_command": "desloppify plan resolve \"test_coverage::token_provider.go::untested_module\" --note \"<what you did>\" --confirm"
+        }
+      ],
+      "cluster_name": "auto/test_coverage-untested_module",
+      "cluster_auto": true,
+      "detector": "test_coverage",
+      "kind": "cluster",
+      "primary_command": "review test coverage gaps"
+    }
   ],
-  "status": "fixed",
-  "resolved": [
-    "unused::tokens.go::unused_import::16"
-  ],
-  "count": 1,
-  "next_command": "desloppify next",
-  "overall_score": 15.1,
-  "objective_score": 60.4,
-  "strict_score": 15.1,
-  "verified_strict_score": 59.8,
-  "prev_overall_score": 15.1,
-  "prev_objective_score": 60.4,
-  "prev_strict_score": 15.1,
-  "prev_verified_strict_score": 59.8,
-  "attestation": "I have actually verified that fernet-go is used in tokens.go - the TokenManager struct has a *fernet.Key field and NewTokenManager calls ValidateKey which returns a *fernet.Key. I am not gaming the score by resolving without fixing.",
+  "queue": {
+    "total": 1,
+    "mode": "execution"
+  },
   "narrative": {
     "phase": "first_scan",
     "headline": "First scan complete. 18 open issues across 3 dimensions.",
@@ -78,11 +159,15 @@
         "type": "refactor",
         "detector": "test_coverage",
         "count": 9,
-        "description": "9 test_coverage work items \u2014 review test coverage gaps \u2014 focus on critical modules with many importers first; defer test writing until code quality issues are resolved",
-        "command": "desloppify show test_coverage --status open",
+        "description": "9 test_coverage issues in 1 cluster(s) \u2014 run `desloppify next`",
+        "command": "desloppify next",
         "impact": 0.0,
         "dimension": "Test health",
         "priority": 3,
+        "clusters": [
+          "auto/test_coverage-untested_module"
+        ],
+        "cluster_count": 1,
         "lane": "test_coverage"
       },
       {
@@ -212,13 +297,6 @@
     },
     "reminders": [
       {
-        "type": "rescan_needed",
-        "message": "Rescan to verify \u2014 cascading effects may create new issues.",
-        "command": "desloppify scan",
-        "priority": 1,
-        "severity": "high"
-      },
-      {
         "type": "zone_classification",
         "message": "4 of 20 files classified as non-production (4 test). Override with `desloppify zone set <file> production` if any are misclassified.",
         "command": "desloppify zone show",
@@ -228,10 +306,94 @@
     ],
     "reminder_history": {
       "zone_classification": 2,
-      "report_scores": 1,
-      "rescan_needed": 1
+      "report_scores": 1
     }
   },
+  "agent_notes": [
+    "Do NOT use `desloppify plan skip` unless the user explicitly asks you to skip an item.",
+    "If you cannot fix an item, report it and move to the next one.",
+    "For cluster items: if the autofix_hint finds 0 results, drill into individual issues with the primary_command."
+  ],
+  "plan": {
+    "active": true,
+    "focus": null,
+    "clusters": [
+      {
+        "name": "auto/unused",
+        "description": "Remove 4 unused issues",
+        "item_count": 0
+      },
+      {
+        "name": "auto/test_coverage-untested_module",
+        "description": "Fix 8 test coverage issues",
+        "item_count": 8
+      },
+      {
+        "name": "auto/security-hardcoded_secret_value",
+        "description": "Fix 2 security issues",
+        "item_count": 0
+      },
+      {
+        "name": "auto/initial-review",
+        "description": "Initial review of 20 unscored subjective dimensions",
+        "item_count": 20
+      }
+    ],
+    "total_ordered": 34,
+    "total_skipped": 20,
+    "plan_overrides_narrative": true
+  },
+  "overall_score": 15.1,
+  "objective_score": 60.4,
+  "strict_score": 15.1,
+  "scorecard_dimensions": [
+    {
+      "name": "File health",
+      "score": 86.9,
+      "strict": 86.9,
+      "checks": 16,
+      "failing": 3,
+      "tier": 3,
+      "subjective": false
+    },
+    {
+      "name": "Code quality",
+      "score": 30.0,
+      "strict": 30.0,
+      "checks": 1,
+      "failing": 1,
+      "tier": 3,
+      "subjective": false
+    },
+    {
+      "name": "Duplication",
+      "score": 99.4,
+      "strict": 99.4,
+      "checks": 110,
+      "failing": 1,
+      "tier": 3,
+      "subjective": false
+    },
+    {
+      "name": "Security",
+      "score": 100.0,
+      "strict": 100.0,
+      "checks": 16,
+      "failing": 0,
+      "tier": 4,
+      "subjective": false
+    },
+    {
+      "name": "Test health",
+      "score": 23.4,
+      "strict": 23.4,
+      "checks": 155,
+      "failing": 9,
+      "tier": 4,
+      "subjective": false
+    }
+  ],
+  "subjective_measures": [],
   "config": {
     "target_strict_score": 85,
     "review_max_age_days": 30,

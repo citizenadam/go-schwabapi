@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-08-25T02:33:57+00:00",
-  "updated": "2026-08-25T02:44:59+00:00",
+  "updated": "2026-08-25T02:45:10+00:00",
   "queue_order": [
     "test_coverage::storage.go::untested_module",
     "test_coverage::postgres.go::untested_module",
@@ -958,6 +958,17 @@
       "cluster_name": "auto/unused",
       "actor": "user",
       "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-08-25T02:45:10+00:00",
+      "action": "done",
+      "issue_ids": [
+        "unused::postgres.go"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "False positive: _ github.com/lib/pq is a blank import required by Go database/sql to register the postgres driver at runtime",
       "detail": {}
     }
   ],
