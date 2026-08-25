@@ -2,97 +2,22 @@
   "command": "next",
   "items": [
     {
-      "id": "auto/test_coverage-untested_module",
-      "action_type": "refactor",
-      "summary": "Fix 8 test coverage issues",
-      "member_count": 8,
-      "members": [
-        {
-          "id": "test_coverage::storage.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "storage.go",
-          "summary": "Untested module (136 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::storage.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::postgres.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "postgres.go",
-          "summary": "Untested module (186 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::postgres.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::storage_factory.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "storage_factory.go",
-          "summary": "Untested module (122 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::storage_factory.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::encryption.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "encryption.go",
-          "summary": "Untested module (78 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::encryption.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::stream.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "stream.go",
-          "summary": "Untested module (450 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::stream.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::enums.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "enums.go",
-          "summary": "Untested module (16 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::enums.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::token_refresh.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "token_refresh.go",
-          "summary": "Untested module (88 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::token_refresh.go::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::token_provider.go::untested_module",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "token_provider.go",
-          "summary": "Untested module (43 LOC, 0 importers)",
-          "status": "open",
-          "kind": "issue",
-          "primary_command": "desloppify plan resolve \"test_coverage::token_provider.go::untested_module\" --note \"<what you did>\" --confirm"
-        }
-      ],
-      "cluster_name": "auto/test_coverage-untested_module",
-      "cluster_auto": true,
-      "detector": "test_coverage",
-      "kind": "cluster",
-      "primary_command": "review test coverage gaps"
+      "id": "structural::types_test.go",
+      "confidence": "low",
+      "detector": "structural",
+      "file": "types_test.go",
+      "summary": "Large file: large (1338 LOC) / complexity score 111",
+      "detail": {
+        "loc": 1338,
+        "complexity_score": 111,
+        "complexity_signals": [
+          "136 if/else branches"
+        ]
+      },
+      "status": "open",
+      "kind": "issue",
+      "primary_command": "desloppify plan resolve \"structural::types_test.go\" --note \"<what you did>\" --confirm",
+      "queue_position": 1
     }
   ],
   "queue": {
@@ -101,7 +26,7 @@
   },
   "narrative": {
     "phase": "first_scan",
-    "headline": "First scan complete. 18 open issues across 3 dimensions.",
+    "headline": "All T1 and T2 items cleared!",
     "dimensions": {
       "lowest_dimensions": [
         {
@@ -157,28 +82,13 @@
       },
       {
         "type": "refactor",
-        "detector": "test_coverage",
-        "count": 9,
-        "description": "9 test_coverage issues in 1 cluster(s) \u2014 run `desloppify next`",
-        "command": "desloppify next",
-        "impact": 0.0,
-        "dimension": "Test health",
-        "priority": 3,
-        "clusters": [
-          "auto/test_coverage-untested_module"
-        ],
-        "cluster_count": 1,
-        "lane": "test_coverage"
-      },
-      {
-        "type": "refactor",
         "detector": "signature",
         "count": 2,
         "description": "2 signature work items \u2014 consolidate inconsistent function signatures",
         "command": "desloppify show signature --status open",
         "impact": 0.0,
         "dimension": "Unknown",
-        "priority": 4,
+        "priority": 3,
         "lane": "refactor_1"
       },
       {
@@ -189,14 +99,14 @@
         "command": "desloppify show boilerplate_duplication --status open",
         "impact": 0.0,
         "dimension": "Duplication",
-        "priority": 5,
+        "priority": 4,
         "lane": "refactor_2"
       }
     ],
     "strategy": {
       "fixer_leverage": {
         "auto_fixable_count": 0,
-        "total_count": 18,
+        "total_count": 9,
         "coverage": 0.0,
         "impact_ratio": 0.0,
         "recommendation": "none"
@@ -222,7 +132,7 @@
         },
         "refactor_1": {
           "actions": [
-            4
+            3
           ],
           "file_count": 1,
           "total_impact": 0.0,
@@ -231,25 +141,16 @@
         },
         "refactor_2": {
           "actions": [
-            5
+            4
           ],
           "file_count": 1,
           "total_impact": 0.0,
           "automation": "manual",
           "run_first": false
-        },
-        "test_coverage": {
-          "actions": [
-            3
-          ],
-          "file_count": 9,
-          "total_impact": 0.0,
-          "automation": "manual",
-          "run_first": false
         }
       },
-      "can_parallelize": true,
-      "hint": "5 independent workstreams, safe to parallelize. Rescan after each phase to verify."
+      "can_parallelize": false,
+      "hint": "Work through actions in priority order. Rescan after each fix to track progress."
     },
     "tools": {
       "fixers": [],
@@ -277,12 +178,12 @@
       "worst_gap": 0.0,
       "trend": "stable"
     },
-    "milestone": null,
+    "milestone": "All T1 and T2 items cleared!",
     "primary_action": {
       "command": "desloppify show flat_dirs --status open",
       "description": "1 flat_dirs issues \u2014 create subdirectories and use `desloppify move`"
     },
-    "why_now": "5 independent workstreams, safe to parallelize. Rescan after each phase to verify.",
+    "why_now": "Work through actions in priority order. Rescan after each fix to track progress.",
     "verification_step": {
       "command": "desloppify scan",
       "reason": "revalidate after changes"
@@ -290,8 +191,8 @@
     "risk_flags": [],
     "strict_target": {
       "target": 85.0,
-      "current": 15.1,
-      "gap": 69.9,
+      "current": 24.6,
+      "gap": 60.4,
       "state": "below",
       "warning": null
     },
@@ -326,7 +227,7 @@
       {
         "name": "auto/test_coverage-untested_module",
         "description": "Fix 8 test coverage issues",
-        "item_count": 8
+        "item_count": 0
       },
       {
         "name": "auto/security-hardcoded_secret_value",
@@ -339,13 +240,13 @@
         "item_count": 20
       }
     ],
-    "total_ordered": 34,
+    "total_ordered": 25,
     "total_skipped": 20,
     "plan_overrides_narrative": true
   },
-  "overall_score": 15.1,
-  "objective_score": 60.4,
-  "strict_score": 15.1,
+  "overall_score": 24.6,
+  "objective_score": 98.2,
+  "strict_score": 24.6,
   "scorecard_dimensions": [
     {
       "name": "File health",
@@ -385,10 +286,10 @@
     },
     {
       "name": "Test health",
-      "score": 23.4,
-      "strict": 23.4,
+      "score": 100.0,
+      "strict": 100.0,
       "checks": 155,
-      "failing": 9,
+      "failing": 0,
       "tier": 4,
       "subjective": false
     }
