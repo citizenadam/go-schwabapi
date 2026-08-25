@@ -34,7 +34,7 @@ type StorageConfig struct {
 	FilePath string
 
 	// PostgresDSN is the libpq connection string for the postgres backend.
-	// e.g. "postgres://user:pass@host:5432/dbname?sslmode=require"
+	// e.g. "postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require"
 	PostgresDSN string
 
 	// PostgresTable is the table name for the postgres backend.

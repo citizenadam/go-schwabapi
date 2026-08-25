@@ -18,7 +18,7 @@ import (
 //
 // Usage:
 //
-//	db, err := sql.Open("postgres", "postgres://user:pass@host/dbname?sslmode=require")
+//	db, err := sql.Open("postgres", "postgres://USER:PASSWORD@HOST/DBNAME?sslmode=require")
 //	storage, err := schwabdev.NewPostgresTokenStorage(db, "myapp_schwab_tokens")
 //	tm, err := schwabdev.NewTokenManager(appKey, appSecret, callbackURL, storage, "", logger, nil)
 type PostgresTokenStorage struct {
