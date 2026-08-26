@@ -200,13 +200,17 @@ type AccountsBaseInstrument struct {
 
 // Instrument represents a financial instrument (accounts context).
 // This is the concrete type used in OrderLeg, Position, etc.
+// PutCall and UnderlyingSymbol are present for option instruments in order
+// responses (verified against the live trader API).
 type Instrument struct {
-	AssetType    string  `json:"assetType"`
-	Cusip        string  `json:"cusip,omitempty"`
-	Symbol       string  `json:"symbol"`
-	Description  string  `json:"description,omitempty"`
-	InstrumentID int64   `json:"instrumentId,omitempty"`
-	NetChange    float64 `json:"netChange,omitempty"`
+	AssetType        string  `json:"assetType"`
+	Cusip            string  `json:"cusip,omitempty"`
+	Symbol           string  `json:"symbol"`
+	Description      string  `json:"description,omitempty"`
+	InstrumentID     int64   `json:"instrumentId,omitempty"`
+	NetChange        float64 `json:"netChange,omitempty"`
+	PutCall          string  `json:"putCall,omitempty"`
+	UnderlyingSymbol string  `json:"underlyingSymbol,omitempty"`
 }
 
 // AccountOption extends AccountsBaseInstrument with option-specific fields.
@@ -935,13 +939,18 @@ type Candle struct {
 type MoversResponse []Mover
 
 // Mover represents a market mover.
+// Fields follow the live API response shape: the movers endpoint returns
+// lastPrice/netChange/netPercentChange/volume/totalVolume per mover.
 type Mover struct {
-	Symbol      string  `json:"symbol,omitempty"`
-	Description string  `json:"description,omitempty"`
-	Change      float64 `json:"change,omitempty"`
-	Direction   string  `json:"direction,omitempty"`
-	LastPrice   float64 `json:"last,omitempty"`
-	TotalVolume int64   `json:"totalVolume,omitempty"`
+	Symbol           string  `json:"symbol,omitempty"`
+	Description      string  `json:"description,omitempty"`
+	LastPrice        float64 `json:"lastPrice,omitempty"`
+	NetChange        float64 `json:"netChange,omitempty"`
+	NetPercentChange float64 `json:"netPercentChange,omitempty"`
+	Volume           int64   `json:"volume,omitempty"`
+	TotalVolume      int64   `json:"totalVolume,omitempty"`
+	Change           float64 `json:"change,omitempty"`
+	Direction        string  `json:"direction,omitempty"`
 }
 
 // MarketHoursResponse is the response for GET /marketdata/v1/markets
