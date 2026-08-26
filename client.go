@@ -20,6 +20,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -311,13 +312,30 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 // Parameters:
 //   - params: Map of parameter names to values (values can be nil)
 //
-// Returns url.Values containing only non-nil parameters converted to strings.
+// Pointer parameters are dereferenced so the pointed-to value is encoded
+// (e.g. *int(300) -> "300"), and typed-nil pointers are omitted entirely.
+// Without this, fmt.Sprintf on a pointer encodes its memory address and a
+// typed-nil pointer stored in an interface is non-nil and would encode as
+// "<nil>", both of which Schwab rejects with HTTP 400 ("should be a valid
+// number" / "Invalid ... param").
 func (c *Client) parseParams(params map[string]any) url.Values {
 	result := url.Values{}
 	for key, value := range params {
-		if value != nil {
-			result.Set(key, fmt.Sprintf("%v", value))
+		if value == nil {
+			continue
 		}
+		rv := reflect.ValueOf(value)
+		for rv.Kind() == reflect.Pointer {
+			if rv.IsNil() {
+				rv = reflect.Value{}
+				break
+			}
+			rv = rv.Elem()
+		}
+		if !rv.IsValid() {
+			continue
+		}
+		result.Set(key, fmt.Sprintf("%v", rv.Interface()))
 	}
 	return result
 }

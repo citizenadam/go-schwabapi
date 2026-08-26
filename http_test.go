@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -199,5 +200,58 @@ func TestExchangeCode_EmptyCode(t *testing.T) {
 	_, err := tm.ExchangeCode(context.Background(), "")
 	if err == nil {
 		t.Fatal("expected error for empty code, got nil")
+	}
+} // TestParseParams verifies that parseParams dereferences pointers and skips
+// typed-nil pointers. Regression test for the v0.0.18 fix: the previous
+// implementation formatted pointer ADDRESSES (fmt.Sprintf("%v", &strikeCount))
+// and encoded typed-nil pointers as "<nil>", both of which Schwab rejects with
+// HTTP 400 ("strikeCount should be a valid number", "Invalid strategy param").
+func TestParseParams(t *testing.T) {
+	sc := 300
+	strategy := "SINGLE"
+	vol := 0.25
+	flag := true
+	typedNilInt := (*int)(nil)
+	typedNilStr := (*string)(nil)
+	typedNilFloat := (*float64)(nil)
+
+	got := (&Client{}).parseParams(map[string]any{
+		"symbol":                 "SPX",
+		"strikeCount":            &sc,
+		"strategy":               &strategy,
+		"volatility":             &vol,
+		"includeUnderlyingQuote": &flag,
+		"contractType":           typedNilStr,
+		"interval":               typedNilFloat,
+		"strike":                 typedNilFloat,
+		"daysToExpiration":       typedNilInt,
+		"expMonth":               typedNilStr,
+		"entitlement":            typedNilStr,
+		"optionType":             typedNilStr,
+		"underlyingPrice":        typedNilFloat,
+		"interestRate":           typedNilFloat,
+		"range":                  typedNilStr,
+		"fromDate":               "2030-07-01",
+		"toDate":                 "2030-09-30",
+	})
+
+	want := url.Values{}
+	want.Set("symbol", "SPX")
+	want.Set("strikeCount", "300")
+	want.Set("strategy", "SINGLE")
+	want.Set("volatility", "0.25")
+	want.Set("includeUnderlyingQuote", "true")
+	want.Set("fromDate", "2030-07-01")
+	want.Set("toDate", "2030-09-30")
+
+	if got.Encode() != want.Encode() {
+		t.Fatalf("parseParams mismatch:\n got: %s\nwant: %s", got.Encode(), want.Encode())
+	}
+
+	// The 400-triggering garbage must never appear.
+	for _, bad := range []string{"<nil>", "0xc0", "0x"} {
+		if strings.Contains(got.Encode(), bad) {
+			t.Fatalf("parseParams encoded pointer garbage %q in: %s", bad, got.Encode())
+		}
 	}
 }
