@@ -1,6 +1,9 @@
 package schwabdev
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // Parameter validation errors
 var (
@@ -58,3 +61,19 @@ var (
 	// ErrStreamerUnavailable indicates streamer information is not available
 	ErrStreamerUnavailable = errors.New("Streamer info unavailable")
 )
+
+// SchwabAPIError is returned for HTTP responses with a non-2xx status code.
+// StatusCode carries the HTTP status and Body the raw response payload, so
+// callers can classify failures (4xx, 429 rate-limit, 401 auth) from the
+// status code alone instead of string-matching response bodies.
+type SchwabAPIError struct {
+	StatusCode int
+	Body       []byte
+}
+
+func (e *SchwabAPIError) Error() string {
+	if len(e.Body) > 0 {
+		return fmt.Sprintf("Schwab API error (status %d): %s", e.StatusCode, string(e.Body))
+	}
+	return fmt.Sprintf("Schwab API error (status %d)", e.StatusCode)
+}

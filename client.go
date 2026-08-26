@@ -34,6 +34,29 @@ type Client struct {
 	timeout      time.Duration
 }
 
+// ClientOption configures a Client at construction time.
+type ClientOption func(*Client)
+
+// WithRoundTripper sets the underlying HTTP transport. Use it to inject
+// telemetry or middleware around every Schwab API request.
+func WithRoundTripper(rt http.RoundTripper) ClientOption {
+	return func(c *Client) {
+		if rt != nil {
+			c.httpClient.Transport = rt
+		}
+	}
+}
+
+// WithBaseURL overrides the API base URL (default https://api.schwabapi.com).
+// Primarily for tests against a mock server.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) {
+		if baseURL != "" {
+			c.baseURL = strings.TrimSuffix(baseURL, "/")
+		}
+	}
+}
+
 // NewClient creates a new Client instance for accessing the Schwab API.
 //
 // Parameters:
@@ -45,9 +68,10 @@ type Client struct {
 //   - timeout: HTTP request timeout (use 0 for DefaultHTTPRequestTimeout)
 //   - callOnAuth: Optional callback — receives auth URL, returns callback URL after
 //     the user completes the OAuth flow. Pass nil to fall back to stdin prompt.
+//   - opts: Optional ClientOptions (WithRoundTripper, WithBaseURL)
 //
 // Returns *Client and error if validation or initialization fails.
-func NewClient(appKey, appSecret, callbackURL, storagePath, encryption string, timeout time.Duration, callOnAuth func(authURL string) (string, error)) (*Client, error) {
+func NewClient(appKey, appSecret, callbackURL, storagePath, encryption string, timeout time.Duration, callOnAuth func(authURL string) (string, error), opts ...ClientOption) (*Client, error) {
 	// Validate timeout
 	if timeout <= 0 {
 		timeout = DefaultHTTPRequestTimeout
@@ -76,10 +100,43 @@ func NewClient(appKey, appSecret, callbackURL, storagePath, encryption string, t
 		timeout:      timeout,
 	}
 
+	for _, opt := range opts {
+		opt(client)
+	}
+
 	// Ensure tokens are up to date on init
 	if _, err := tokenManager.UpdateTokens(false, false); err != nil {
 		// Log warning but don't fail - tokens might not exist yet for first-time setup
 		logger.Debug("Could not update tokens during initialization", "error", err)
+	}
+
+	return client, nil
+}
+
+// NewClientWithTokenManager creates a Client wired to an existing TokenManager.
+// This is the constructor for consumers that manage their own token storage
+// backend (e.g. Postgres) instead of the default file-based storage.
+//
+// Parameters:
+//   - tokenManager: An existing, configured TokenManager
+//   - opts: Optional ClientOptions (WithRoundTripper, WithBaseURL)
+//
+// Returns *Client and error if validation fails.
+func NewClientWithTokenManager(tokenManager *TokenManager, opts ...ClientOption) (*Client, error) {
+	if tokenManager == nil {
+		return nil, fmt.Errorf("tokenManager cannot be nil")
+	}
+
+	client := &Client{
+		tokenManager: tokenManager,
+		httpClient:   &http.Client{Timeout: DefaultHTTPRequestTimeout},
+		baseURL:      "https://api.schwabapi.com",
+		logger:       slog.Default(),
+		timeout:      DefaultHTTPRequestTimeout,
+	}
+
+	for _, opt := range opts {
+		opt(client)
 	}
 
 	return client, nil
@@ -214,6 +271,20 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 		return c.doRequest(ctx, method, path, body, result, true)
 	}
 
+	// Non-2xx responses are failures, not payloads. Surface them as typed
+	// errors carrying the status code and body so callers can classify
+	// failures (4xx, 429 rate-limit, 401 auth) without string-matching.
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		defer resp.Body.Close()
+
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read error response body: %w", readErr)
+		}
+
+		return nil, &SchwabAPIError{StatusCode: resp.StatusCode, Body: bodyBytes}
+	}
+
 	if result != nil && resp.Body != nil {
 		defer resp.Body.Close()
 
@@ -226,7 +297,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 
 		if len(bodyBytes) > 0 {
 			if err := json.Unmarshal(bodyBytes, result); err != nil {
-				c.logger.Debug("Failed to unmarshal response body", "error", err, "status", resp.StatusCode)
+				return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 			}
 		}
 	}

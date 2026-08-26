@@ -299,7 +299,7 @@ func (tm *TokenManager) updateAccessToken() error {
 	rtIssued := tm.refreshTokenIssued
 	tm.mu.RUnlock()
 
-	response, err := tm.postOAuthToken("refresh_token", rt)
+	response, err := tm.postOAuthToken(context.Background(), "refresh_token", rt)
 	if err != nil {
 		return err
 	}
@@ -311,12 +311,55 @@ func (tm *TokenManager) updateRefreshToken() error {
 	if err != nil {
 		return err
 	}
-	response, err := tm.postOAuthToken("authorization_code", authCode)
+	response, err := tm.postOAuthToken(context.Background(), "authorization_code", authCode)
 	if err != nil {
 		return err
 	}
 	now := time.Now().UTC()
 	return tm.saveTokens(now, now, response)
+}
+
+// ExchangeCode exchanges an authorization code for tokens using the
+// authorization_code grant and returns the resulting TokenRecord with raw
+// (unencrypted) token values. It does NOT persist the record or update the
+// in-memory token state — the caller persists it via its TokenStorage and
+// calls Reload() to synchronize. This is the entry point for application
+// auth-callback handlers that receive the authorization code from the OAuth
+// redirect and manage their own storage.
+func (tm *TokenManager) ExchangeCode(ctx context.Context, code string) (*TokenRecord, error) {
+	if code == "" {
+		return nil, fmt.Errorf("authorization code cannot be empty")
+	}
+
+	response, err := tm.postOAuthToken(ctx, "authorization_code", code)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	expiresIn := int(AccessTokenValidity.Seconds())
+	if exp, ok := response["expires_in"].(float64); ok {
+		expiresIn = int(exp)
+	}
+
+	accessToken, _ := response["access_token"].(string)
+	refreshToken, _ := response["refresh_token"].(string)
+	idToken, _ := response["id_token"].(string)
+	tokenType, _ := response["token_type"].(string)
+	if tokenType == "" {
+		tokenType = "Bearer"
+	}
+
+	return &TokenRecord{
+		AccessTokenIssued:  now,
+		RefreshTokenIssued: now,
+		AccessToken:        accessToken,
+		RefreshToken:       refreshToken,
+		IDToken:            idToken,
+		ExpiresIn:          expiresIn,
+		TokenType:          tokenType,
+		Scope:              "api",
+	}, nil
 }
 
 // ── OAuth helpers ─────────────────────────────────────────────────────────────
@@ -348,7 +391,7 @@ func (tm *TokenManager) getNewTokens() (string, error) {
 	return parsed.Query().Get("code"), nil
 }
 
-func (tm *TokenManager) postOAuthToken(grantType, code string) (map[string]any, error) {
+func (tm *TokenManager) postOAuthToken(ctx context.Context, grantType, code string) (map[string]any, error) {
 	client := &http.Client{Timeout: OAuthTokenRequestTimeout}
 	auth := base64.StdEncoding.EncodeToString([]byte(tm.appKey + ":" + tm.appSecret))
 
@@ -364,7 +407,7 @@ func (tm *TokenManager) postOAuthToken(grantType, code string) (map[string]any, 
 		return nil, ErrInvalidGrantType
 	}
 
-	req, err := http.NewRequest(http.MethodPost,
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		tm.oauthTokenURL,
 		strings.NewReader(data.Encode()))
 	if err != nil {
