@@ -357,7 +357,7 @@ func TestQuote_RoundTrip(t *testing.T) {
 			NetPercentChange: 0.96,
 			Mark:             182.49,
 			SecurityStatus:   "Normal",
-			Volatility:        25.5,
+			Volatility:       25.5,
 		},
 		Fundamental: &schwabdev.Fundamental{
 			PeRatio:         28.5,
@@ -418,37 +418,41 @@ func TestQuotesResponse_UnmarshalFromAPI(t *testing.T) {
 			"symbol": "AAPL",
 			"realtime": true,
 			"ssid": 1001,
-			"askPrice": 182.50,
-			"bidPrice": 182.45,
-			"lastPrice": 182.48,
-			"totalVolume": 40000000,
-			"closePrice": 180.00,
-			"highPrice": 183.00,
-			"lowPrice": 181.00,
-			"openPrice": 181.50,
-			"netChange": 2.48,
-			"netPercentChange": 1.38,
-			"mark": 182.48,
-			"securityStatus": "Normal",
-			"volatility": 22.5
+			"quote": {
+				"askPrice": 182.50,
+				"bidPrice": 182.45,
+				"lastPrice": 182.48,
+				"totalVolume": 40000000,
+				"closePrice": 180.00,
+				"highPrice": 183.00,
+				"lowPrice": 181.00,
+				"openPrice": 181.50,
+				"netChange": 2.48,
+				"netPercentChange": 1.38,
+				"mark": 182.48,
+				"securityStatus": "Normal",
+				"volatility": 22.5
+			}
 		},
 		"MSFT": {
 			"assetMainType": "EQUITY",
 			"symbol": "MSFT",
 			"realtime": true,
 			"ssid": 1002,
-			"askPrice": 415.00,
-			"bidPrice": 414.95,
-			"lastPrice": 414.98,
-			"totalVolume": 20000000,
-			"closePrice": 410.00,
-			"highPrice": 416.00,
-			"lowPrice": 413.00,
-			"openPrice": 413.50,
-			"netChange": 4.98,
-			"netPercentChange": 1.21,
-			"mark": 414.98,
-			"securityStatus": "Normal"
+			"quote": {
+				"askPrice": 415.00,
+				"bidPrice": 414.95,
+				"lastPrice": 414.98,
+				"totalVolume": 20000000,
+				"closePrice": 410.00,
+				"highPrice": 416.00,
+				"lowPrice": 413.00,
+				"openPrice": 413.50,
+				"netChange": 4.98,
+				"netPercentChange": 1.21,
+				"mark": 414.98,
+				"securityStatus": "Normal"
+			}
 		}
 	}`
 	got := mustUnmarshal[schwabdev.QuotesResponse](t, raw)
@@ -943,15 +947,15 @@ func TestInstrumentSearch_EnrichedFields(t *testing.T) {
 
 func TestMarketDataBond_RoundTrip(t *testing.T) {
 	input := schwabdev.MarketDataBond{
-		Cusip:         "345370100",
-		Symbol:        "GOVT10Y",
-		Description:   "US Treasury 10 Year",
-		Exchange:      "GOVT",
-		AssetType:     "BOND",
-		BondFactor:    "1.0",
+		Cusip:          "345370100",
+		Symbol:         "GOVT10Y",
+		Description:    "US Treasury 10 Year",
+		Exchange:       "GOVT",
+		AssetType:      "BOND",
+		BondFactor:     "1.0",
 		BondMultiplier: "1000",
-		BondPrice:     98.75,
-		Type:          "US_TREASURY_NOTE",
+		BondPrice:      98.75,
+		Type:           "US_TREASURY_NOTE",
 	}
 	got := roundtrip(t, input)
 	if got.BondPrice != 98.75 {
@@ -1173,9 +1177,9 @@ func TestTokenRecord_RoundTrip(t *testing.T) {
 func TestConstants_TraderAPI(t *testing.T) {
 	// Verify key enum values match the OpenAPI spec exactly.
 	tests := []struct {
-		name  string
-		got   string
-		want  string
+		name string
+		got  string
+		want string
 	}{
 		{"InstructionSellShortExempt", schwabdev.InstructionSellShortExempt, "SELL_SHORT_EXEMPT"},
 		{"DurationImmediateOrCancel", schwabdev.DurationImmediateOrCancel, "IMMEDIATE_OR_CANCEL"},
@@ -1334,5 +1338,79 @@ func TestConstants_MoverFrequency(t *testing.T) {
 				t.Errorf("%s: want %d, got %d", tc.name, tc.want, tc.got)
 			}
 		})
+	}
+}
+
+// TestQuoteNestedQuoteObject is a regression test for the v0.0.19 fix:
+// Schwab nests quote data under the "quote" object, so QuoteData must be
+// tagged json:"quote". Before the fix it was an anonymous embedded field,
+// which flattens the fields to the top level of the symbol object, leaving
+// quote.lastPrice (etc.) unpopulated. Index symbols (no "extended" section,
+// e.g. $RVX) then reported LastPrice=0 and were dropped by consumers.
+func TestQuoteNestedQuoteObject(t *testing.T) {
+	body := []byte(`{
+		"$RVX": {
+			"assetMainType": "INDEX",
+			"quote": {
+				"lastPrice": 17.21,
+				"bidPrice": 0,
+				"askPrice": 0,
+				"netChange": 0.11,
+				"volatility": 0,
+				"totalVolume": 0,
+				"quoteTime": 1756075200000
+			},
+			"reference": {"description": "CBOE Russell 1000 Volatility Index"}
+		}
+	}`)
+
+	var resp schwabdev.QuotesResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("unmarshal quotes: %v", err)
+	}
+	q, ok := resp["$RVX"]
+	if !ok {
+		t.Fatalf("symbol $RVX missing from response")
+	}
+	if q.QuoteData == nil {
+		t.Fatal("QuoteData is nil — the \"quote\" object was not parsed")
+	}
+	if q.QuoteData.LastPrice != 17.21 {
+		t.Fatalf("LastPrice = %v, want 17.21", q.QuoteData.LastPrice)
+	}
+	if q.Extended != nil {
+		t.Fatalf("index symbol unexpectedly has an extended section: %+v", q.Extended)
+	}
+}
+
+// TestOptionChainsNumericLastTradingDay is a regression test for the v0.0.19
+// fix: the live Schwab API returns lastTradingDay as a number (epoch millis),
+// not a string as the OpenAPI spec declares. json.Number accepts both.
+func TestOptionChainsNumericLastTradingDay(t *testing.T) {
+	body := []byte(`{
+		"symbol": "SPX",
+		"status": "SUCCESS",
+		"underlyingPrice": 6012.5,
+		"callExpDateMap": {
+			"2026-08-26:0": {
+				"0.6000.0": [{
+					"putCall": "CALL",
+					"symbol": "SPXW   260826C06000000",
+					"lastTradingDay": 1784937600000,
+					"expirationDate": "2026-08-26",
+					"daysToExpiration": 0,
+					"strikePrice": 6000
+				}]
+			}
+		}
+	}`)
+
+	var resp schwabdev.OptionChainsResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("unmarshal chains: %v", err)
+	}
+	contract := resp.CallExpDateMap["2026-08-26:0"]["0.6000.0"][0]
+	if contract.LastTradingDay.String() != "1784937600000" {
+		t.Fatalf("LastTradingDay = %q, want 1784937600000", contract.LastTradingDay.String())
 	}
 }

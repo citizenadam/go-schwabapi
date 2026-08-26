@@ -687,32 +687,35 @@ type QuoteResponse Quote
 // ExtendedMarket represents extended-hours market data for a quote.
 // Corresponds to the OpenAPI ExtendedMarket schema.
 type ExtendedMarket struct {
-	AskPrice   float64 `json:"askPrice,omitempty"`
-	AskSize    int     `json:"askSize,omitempty"`
-	BidPrice   float64 `json:"bidPrice,omitempty"`
-	BidSize    int     `json:"bidSize,omitempty"`
-	LastPrice  float64 `json:"lastPrice,omitempty"`
-	LastSize   int     `json:"lastSize,omitempty"`
-	Mark       float64 `json:"mark,omitempty"`
-	QuoteTime  int64   `json:"quoteTime,omitempty"`
-	TotalVolume int64  `json:"totalVolume,omitempty"`
-	TradeTime  int64   `json:"tradeTime,omitempty"`
+	AskPrice    float64 `json:"askPrice,omitempty"`
+	AskSize     int     `json:"askSize,omitempty"`
+	BidPrice    float64 `json:"bidPrice,omitempty"`
+	BidSize     int     `json:"bidSize,omitempty"`
+	LastPrice   float64 `json:"lastPrice,omitempty"`
+	LastSize    int     `json:"lastSize,omitempty"`
+	Mark        float64 `json:"mark,omitempty"`
+	QuoteTime   int64   `json:"quoteTime,omitempty"`
+	TotalVolume int64   `json:"totalVolume,omitempty"`
+	TradeTime   int64   `json:"tradeTime,omitempty"`
 }
 
 // Quote represents a complete quote with all data sections.
 // The API returns different sub-objects (quote, fundamental, reference, regular)
 // as a flat structure; we embed them for convenience.
 type Quote struct {
-	AssetMainType string `json:"assetMainType,omitempty"`
-	AssetSubType  string `json:"assetSubType,omitempty"`
-	SSID          int64  `json:"ssid,omitempty"`
-	Symbol        string `json:"symbol,omitempty"`
-	RealTime      bool   `json:"realtime,omitempty"`
-	QuoteType     string `json:"quoteType,omitempty"`
+	AssetMainType string          `json:"assetMainType,omitempty"`
+	AssetSubType  string          `json:"assetSubType,omitempty"`
+	SSID          int64           `json:"ssid,omitempty"`
+	Symbol        string          `json:"symbol,omitempty"`
+	RealTime      bool            `json:"realtime,omitempty"`
+	QuoteType     string          `json:"quoteType,omitempty"`
 	Extended      *ExtendedMarket `json:"extended,omitempty"`
 
-	// Quote data (QuoteEquity / QuoteOption / etc.)
-	*QuoteData
+	// Quote data (QuoteEquity / QuoteOption / etc.) — Schwab nests this under
+	// the "quote" object in the response. The explicit tag is required:
+	// anonymous embedding would flatten these fields to the top level of the
+	// symbol object and quote.lastPrice (etc.) would never be populated.
+	QuoteData *QuoteData `json:"quote,omitempty"`
 
 	// Sub-sections
 	Fundamental *Fundamental `json:"fundamental,omitempty"`
@@ -874,7 +877,7 @@ type OptionContract struct {
 	ExpirationDate         string               `json:"expirationDate,omitempty"`
 	DaysToExpiration       int                  `json:"daysToExpiration,omitempty"`
 	ExpirationType         string               `json:"expirationType,omitempty"`
-	LastTradingDay         string               `json:"lastTradingDay,omitempty"`
+	LastTradingDay         json.Number          `json:"lastTradingDay,omitempty"`
 	Multiplier             float64              `json:"multiplier,omitempty"`
 	SettlementType         string               `json:"settlementType,omitempty"`
 	DeliverableNote        string               `json:"deliverableNote,omitempty"`
@@ -906,12 +909,12 @@ type OptionExpirationChainResponse struct {
 
 // ExpirationDate represents an option expiration date.
 type ExpirationDate struct {
-	DaysToExpiration int      `json:"daysToExpiration,omitempty"`
-	Expiration       string   `json:"expiration,omitempty"`
-	ExpirationType   string   `json:"expirationType,omitempty"`
-	Standard         bool     `json:"standard,omitempty"`
-	SettlementType   string   `json:"settlementType,omitempty"`
-	OptionRoots      string  `json:"optionRoots,omitempty"`
+	DaysToExpiration int    `json:"daysToExpiration,omitempty"`
+	Expiration       string `json:"expiration,omitempty"`
+	ExpirationType   string `json:"expirationType,omitempty"`
+	Standard         bool   `json:"standard,omitempty"`
+	SettlementType   string `json:"settlementType,omitempty"`
+	OptionRoots      string `json:"optionRoots,omitempty"`
 }
 
 // PriceHistoryResponse is the response for GET /marketdata/v1/pricehistory
@@ -1007,95 +1010,95 @@ type MarketDataInstrument struct {
 // MarketDataBond represents bond instrument info for a market-data instrument search.
 // Corresponds to the OpenAPI Bond schema.
 type MarketDataBond struct {
-	Cusip         string  `json:"cusip,omitempty"`
-	Symbol        string  `json:"symbol,omitempty"`
-	Description   string  `json:"description,omitempty"`
-	Exchange      string  `json:"exchange,omitempty"`
-	AssetType     string  `json:"assetType,omitempty"`
-	BondFactor    string  `json:"bondFactor,omitempty"`
+	Cusip          string  `json:"cusip,omitempty"`
+	Symbol         string  `json:"symbol,omitempty"`
+	Description    string  `json:"description,omitempty"`
+	Exchange       string  `json:"exchange,omitempty"`
+	AssetType      string  `json:"assetType,omitempty"`
+	BondFactor     string  `json:"bondFactor,omitempty"`
 	BondMultiplier string  `json:"bondMultiplier,omitempty"`
-	BondPrice     float64 `json:"bondPrice,omitempty"`
-	Type          string  `json:"type,omitempty"`
+	BondPrice      float64 `json:"bondPrice,omitempty"`
+	Type           string  `json:"type,omitempty"`
 }
 
 // FundamentalInst represents detailed fundamental data for an instrument search.
 // Corresponds to the OpenAPI FundamentalInst schema.
 type FundamentalInst struct {
-	Symbol              string  `json:"symbol,omitempty"`
-	High52              float64 `json:"high52,omitempty"`
-	Low52               float64 `json:"low52,omitempty"`
-	DividendAmount      float64 `json:"dividendAmount,omitempty"`
-	DividendYield       float64 `json:"dividendYield,omitempty"`
-	DividendDate        string  `json:"dividendDate,omitempty"`
-	PeRatio             float64 `json:"peRatio,omitempty"`
-	PegRatio            float64 `json:"pegRatio,omitempty"`
-	PbRatio             float64 `json:"pbRatio,omitempty"`
-	PrRatio             float64 `json:"prRatio,omitempty"`
-	PcfRatio            float64 `json:"pcfRatio,omitempty"`
-	GrossMarginTTM      float64 `json:"grossMarginTTM,omitempty"`
-	GrossMarginMRQ      float64 `json:"grossMarginMRQ,omitempty"`
-	NetProfitMarginTTM  float64 `json:"netProfitMarginTTM,omitempty"`
-	NetProfitMarginMRQ  float64 `json:"netProfitMarginMRQ,omitempty"`
-	OperatingMarginTTM  float64 `json:"operatingMarginTTM,omitempty"`
-	OperatingMarginMRQ  float64 `json:"operatingMarginMRQ,omitempty"`
-	ReturnOnEquity      float64 `json:"returnOnEquity,omitempty"`
-	ReturnOnAssets      float64 `json:"returnOnAssets,omitempty"`
-	ReturnOnInvestment  float64 `json:"returnOnInvestment,omitempty"`
-	QuickRatio          float64 `json:"quickRatio,omitempty"`
-	CurrentRatio        float64 `json:"currentRatio,omitempty"`
-	InterestCoverage    float64 `json:"interestCoverage,omitempty"`
-	TotalDebtToCapital  float64 `json:"totalDebtToCapital,omitempty"`
-	LtDebtToEquity      float64 `json:"ltDebtToEquity,omitempty"`
-	TotalDebtToEquity   float64 `json:"totalDebtToEquity,omitempty"`
-	EpsTTM              float64 `json:"epsTTM,omitempty"`
-	EpsChangePercentTTM float64 `json:"epsChangePercentTTM,omitempty"`
-	EpsChangeYear       float64 `json:"epsChangeYear,omitempty"`
-	EpsChange            float64 `json:"epsChange,omitempty"`
-	RevChangeYear       float64 `json:"revChangeYear,omitempty"`
-	RevChangeTTM        float64 `json:"revChangeTTM,omitempty"`
-	RevChangeIn         float64 `json:"revChangeIn,omitempty"`
-	SharesOutstanding   float64 `json:"sharesOutstanding,omitempty"`
-	MarketCapFloat      float64 `json:"marketCapFloat,omitempty"`
-	MarketCap           float64 `json:"marketCap,omitempty"`
-	BookValuePerShare   float64 `json:"bookValuePerShare,omitempty"`
-	ShortIntToFloat     float64 `json:"shortIntToFloat,omitempty"`
-	ShortIntDayToCover  float64 `json:"shortIntDayToCover,omitempty"`
-	DivGrowthRate3Year  float64 `json:"divGrowthRate3Year,omitempty"`
-	DividendPayAmount   float64 `json:"dividendPayAmount,omitempty"`
-	DividendPayDate     string  `json:"dividendPayDate,omitempty"`
-	Beta                float64 `json:"beta,omitempty"`
-	Vol1DayAvg          float64 `json:"vol1DayAvg,omitempty"`
-	Vol10DayAvg         float64 `json:"vol10DayAvg,omitempty"`
-	Vol3MonthAvg        float64 `json:"vol3MonthAvg,omitempty"`
-	Avg10DaysVolume     int64   `json:"avg10DaysVolume,omitempty"`
-	Avg1DayVolume       int64   `json:"avg1DayVolume,omitempty"`
-	Avg3MonthVolume     int64   `json:"avg3MonthVolume,omitempty"`
-	DeclarationDate     string  `json:"declarationDate,omitempty"`
-	DividendFreq        int     `json:"dividendFreq,omitempty"`
-	Eps                 float64 `json:"eps,omitempty"`
-	CorporationActionDate string `json:"corporationActionDate,omitempty"`
-	DtnVolume           int64   `json:"dtnVolume,omitempty"`
-	NextDividendPayDate string  `json:"nextDividendPayDate,omitempty"`
-	NextDividendDate    string  `json:"nextDividendDate,omitempty"`
-	FundLeverageFactor  float64 `json:"fundLeverageFactor,omitempty"`
-	FundStrategy        string  `json:"fundStrategy,omitempty"`
+	Symbol                string  `json:"symbol,omitempty"`
+	High52                float64 `json:"high52,omitempty"`
+	Low52                 float64 `json:"low52,omitempty"`
+	DividendAmount        float64 `json:"dividendAmount,omitempty"`
+	DividendYield         float64 `json:"dividendYield,omitempty"`
+	DividendDate          string  `json:"dividendDate,omitempty"`
+	PeRatio               float64 `json:"peRatio,omitempty"`
+	PegRatio              float64 `json:"pegRatio,omitempty"`
+	PbRatio               float64 `json:"pbRatio,omitempty"`
+	PrRatio               float64 `json:"prRatio,omitempty"`
+	PcfRatio              float64 `json:"pcfRatio,omitempty"`
+	GrossMarginTTM        float64 `json:"grossMarginTTM,omitempty"`
+	GrossMarginMRQ        float64 `json:"grossMarginMRQ,omitempty"`
+	NetProfitMarginTTM    float64 `json:"netProfitMarginTTM,omitempty"`
+	NetProfitMarginMRQ    float64 `json:"netProfitMarginMRQ,omitempty"`
+	OperatingMarginTTM    float64 `json:"operatingMarginTTM,omitempty"`
+	OperatingMarginMRQ    float64 `json:"operatingMarginMRQ,omitempty"`
+	ReturnOnEquity        float64 `json:"returnOnEquity,omitempty"`
+	ReturnOnAssets        float64 `json:"returnOnAssets,omitempty"`
+	ReturnOnInvestment    float64 `json:"returnOnInvestment,omitempty"`
+	QuickRatio            float64 `json:"quickRatio,omitempty"`
+	CurrentRatio          float64 `json:"currentRatio,omitempty"`
+	InterestCoverage      float64 `json:"interestCoverage,omitempty"`
+	TotalDebtToCapital    float64 `json:"totalDebtToCapital,omitempty"`
+	LtDebtToEquity        float64 `json:"ltDebtToEquity,omitempty"`
+	TotalDebtToEquity     float64 `json:"totalDebtToEquity,omitempty"`
+	EpsTTM                float64 `json:"epsTTM,omitempty"`
+	EpsChangePercentTTM   float64 `json:"epsChangePercentTTM,omitempty"`
+	EpsChangeYear         float64 `json:"epsChangeYear,omitempty"`
+	EpsChange             float64 `json:"epsChange,omitempty"`
+	RevChangeYear         float64 `json:"revChangeYear,omitempty"`
+	RevChangeTTM          float64 `json:"revChangeTTM,omitempty"`
+	RevChangeIn           float64 `json:"revChangeIn,omitempty"`
+	SharesOutstanding     float64 `json:"sharesOutstanding,omitempty"`
+	MarketCapFloat        float64 `json:"marketCapFloat,omitempty"`
+	MarketCap             float64 `json:"marketCap,omitempty"`
+	BookValuePerShare     float64 `json:"bookValuePerShare,omitempty"`
+	ShortIntToFloat       float64 `json:"shortIntToFloat,omitempty"`
+	ShortIntDayToCover    float64 `json:"shortIntDayToCover,omitempty"`
+	DivGrowthRate3Year    float64 `json:"divGrowthRate3Year,omitempty"`
+	DividendPayAmount     float64 `json:"dividendPayAmount,omitempty"`
+	DividendPayDate       string  `json:"dividendPayDate,omitempty"`
+	Beta                  float64 `json:"beta,omitempty"`
+	Vol1DayAvg            float64 `json:"vol1DayAvg,omitempty"`
+	Vol10DayAvg           float64 `json:"vol10DayAvg,omitempty"`
+	Vol3MonthAvg          float64 `json:"vol3MonthAvg,omitempty"`
+	Avg10DaysVolume       int64   `json:"avg10DaysVolume,omitempty"`
+	Avg1DayVolume         int64   `json:"avg1DayVolume,omitempty"`
+	Avg3MonthVolume       int64   `json:"avg3MonthVolume,omitempty"`
+	DeclarationDate       string  `json:"declarationDate,omitempty"`
+	DividendFreq          int     `json:"dividendFreq,omitempty"`
+	Eps                   float64 `json:"eps,omitempty"`
+	CorporationActionDate string  `json:"corporationActionDate,omitempty"`
+	DtnVolume             int64   `json:"dtnVolume,omitempty"`
+	NextDividendPayDate   string  `json:"nextDividendPayDate,omitempty"`
+	NextDividendDate      string  `json:"nextDividendDate,omitempty"`
+	FundLeverageFactor    float64 `json:"fundLeverageFactor,omitempty"`
+	FundStrategy          string  `json:"fundStrategy,omitempty"`
 }
 
 // InstrumentSearch represents an instrument search result.
 // Corresponds to the OpenAPI InstrumentResponse schema.
 type InstrumentSearch struct {
-	Cusip             string               `json:"cusip,omitempty"`
-	Symbol            string               `json:"symbol,omitempty"`
-	Description        string               `json:"description,omitempty"`
-	Exchange          string               `json:"exchange,omitempty"`
-	AssetType         string               `json:"assetType,omitempty"`
-	BondFactor        string               `json:"bondFactor,omitempty"`
-	BondMultiplier    string               `json:"bondMultiplier,omitempty"`
-	BondPrice         float64              `json:"bondPrice,omitempty"`
-	Type              string               `json:"type,omitempty"`
-	Fundamental       *FundamentalInst     `json:"fundamental,omitempty"`
-	InstrumentInfo    *MarketDataInstrument `json:"instrumentInfo,omitempty"`
-	BondInstrumentInfo *MarketDataBond     `json:"bondInstrumentInfo,omitempty"`
+	Cusip              string                `json:"cusip,omitempty"`
+	Symbol             string                `json:"symbol,omitempty"`
+	Description        string                `json:"description,omitempty"`
+	Exchange           string                `json:"exchange,omitempty"`
+	AssetType          string                `json:"assetType,omitempty"`
+	BondFactor         string                `json:"bondFactor,omitempty"`
+	BondMultiplier     string                `json:"bondMultiplier,omitempty"`
+	BondPrice          float64               `json:"bondPrice,omitempty"`
+	Type               string                `json:"type,omitempty"`
+	Fundamental        *FundamentalInst      `json:"fundamental,omitempty"`
+	InstrumentInfo     *MarketDataInstrument `json:"instrumentInfo,omitempty"`
+	BondInstrumentInfo *MarketDataBond       `json:"bondInstrumentInfo,omitempty"`
 }
 
 // InstrumentCUSIPResponse is the response for GET /marketdata/v1/instruments/{cusip_id}
