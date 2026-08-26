@@ -541,10 +541,10 @@ func TestOptionChainsResponse_RoundTrip(t *testing.T) {
 						PutCall:          "CALL",
 						Symbol:           "SPY   240119C00450000",
 						Description:      "SPY Jan 19 2024 450 Call",
-						BidPrice:         3.50,
-						AskPrice:         3.55,
-						LastPrice:        3.52,
-						MarkPrice:        3.525,
+						Bid:               3.50,
+						Ask:               3.55,
+						Last:              3.52,
+						Mark:              3.525,
 						Delta:            0.52,
 						Gamma:            0.03,
 						Theta:            -0.15,
@@ -1410,7 +1410,7 @@ func TestOptionChainsNumericLastTradingDay(t *testing.T) {
 		t.Fatalf("unmarshal chains: %v", err)
 	}
 	contract := resp.CallExpDateMap["2026-08-26:0"]["0.6000.0"][0]
-	if contract.LastTradingDay.String() != "1784937600000" {
-		t.Fatalf("LastTradingDay = %q, want 1784937600000", contract.LastTradingDay.String())
+	if contract.LastTradingDay != 1784937600000 {
+		t.Fatalf("LastTradingDay = %d, want 1784937600000", contract.LastTradingDay)
 	}
 }
