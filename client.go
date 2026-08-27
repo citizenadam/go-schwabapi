@@ -58,6 +58,18 @@ func WithBaseURL(baseURL string) ClientOption {
 	}
 }
 
+// WithTimeout overrides the HTTP client timeout for all Schwab API requests.
+// The default is DefaultHTTPRequestTimeout (10s). Use it when callers need a
+// longer budget (e.g. account orders/history endpoints that can exceed 10s on
+// slow market days). A value <= 0 leaves the default untouched.
+func WithTimeout(timeout time.Duration) ClientOption {
+	return func(c *Client) {
+		if timeout > 0 {
+			c.httpClient.Timeout = timeout
+		}
+	}
+}
+
 // NewClient creates a new Client instance for accessing the Schwab API.
 //
 // Parameters:

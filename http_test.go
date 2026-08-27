@@ -113,6 +113,28 @@ func TestWithRoundTripper(t *testing.T) {
 	}
 }
 
+// TestWithTimeout verifies WithTimeout overrides the HTTP client timeout and
+// that a zero/negative value leaves the default untouched.
+func TestWithTimeout(t *testing.T) {
+	client, _ := newQuotesClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}, WithTimeout(45*time.Second))
+
+	if got := client.httpClient.Timeout; got != 45*time.Second {
+		t.Fatalf("httpClient.Timeout = %s, want 45s", got)
+	}
+
+	// Zero value must not clobber the default.
+	client2, _ := newQuotesClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}, WithTimeout(0))
+	if got := client2.httpClient.Timeout; got != DefaultHTTPRequestTimeout {
+		t.Fatalf("httpClient.Timeout = %s, want default %s", got, DefaultHTTPRequestTimeout)
+	}
+}
+
 // roundTripperFunc adapts a func to http.RoundTripper.
 type roundTripperFunc func(*http.Request) (*http.Response, error)
 
