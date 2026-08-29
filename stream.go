@@ -18,6 +18,17 @@ import (
 const (
 	pingInterval = 20 * time.Second
 	pingTimeout  = 10 * time.Second
+
+	// DefaultReadyTimeout is the maximum time WaitReady waits for the
+	// WebSocket connection to be established and logged in before returning
+	// an error. Configurable via SetReadyTimeout.
+	DefaultReadyTimeout = 60 * time.Second
+
+	// readyRecheckInterval is how often WaitReady re-fetches the current
+	// ready channel. The channel is replaced on every disconnect, so a
+	// waiter that captured a pre-reconnect channel must re-check to notice
+	// a new connection's readiness without waiting a full timeout.
+	readyRecheckInterval = 250 * time.Millisecond
 )
 
 // TokenProvider is any type that can return a fresh, valid access token on
@@ -48,6 +59,20 @@ type Streamer struct {
 	conn          *websocket.Conn
 	subscriptions map[string]map[string][]string // service → key → fields
 	requestID     atomic.Int64
+
+	// ready is closed once after the connection is established, logged in,
+	// and subscriptions replayed. It is re-created (open) on every
+	// disconnect so WaitReady callers block during reconnection cycles.
+	ready       chan struct{}
+	readyOnce   sync.Once
+	readyTimeout time.Duration
+
+	// cachedInfo caches the streamer connection metadata for the current
+	// connection so send does not trigger an HTTP roundtrip per request.
+	// It is invalidated at the start of each reconnect cycle so every new
+	// connection fetches fresh session keys.
+	cachedInfo map[string]any
+	infoMu     sync.RWMutex
 }
 
 // NewStreamer initialises the streamer.
@@ -62,7 +87,19 @@ func NewStreamer(logger *slog.Logger, tokens TokenProvider, infoSrc InfoSource) 
 		logger:        logger,
 		reconnect:     NewReconnectManager(logger),
 		subscriptions: make(map[string]map[string][]string),
+		ready:         make(chan struct{}),
+		readyTimeout:  DefaultReadyTimeout,
 	}
+}
+
+// SetReadyTimeout sets the maximum time WaitReady waits for the streamer to
+// be ready. Must be called before Start, as the value is read without
+// synchronization during send.
+func (s *Streamer) SetReadyTimeout(timeout time.Duration) {
+	if timeout <= 0 {
+		timeout = DefaultReadyTimeout
+	}
+	s.readyTimeout = timeout
 }
 
 // Start connects, logs in, replays subscriptions, and then reads messages into
@@ -70,10 +107,15 @@ func NewStreamer(logger *slog.Logger, tokens TokenProvider, infoSrc InfoSource) 
 // Transient disconnects are handled automatically with exponential backoff.
 func (s *Streamer) Start(ctx context.Context, dataChan chan<- []byte) error {
 	return s.reconnect.ReconnectWithBackoff(ctx, func(innerCtx context.Context) error {
+		// Invalidate cached streamer info so the new connection fetches
+		// fresh session keys (they rotate on reconnect).
+		s.invalidateCachedInfo()
+
 		info, err := s.infoSrc()
 		if err != nil {
 			return fmt.Errorf("get streamer info: %w", err)
 		}
+		s.storeCachedInfo(info)
 
 		wsURL, ok := info["streamerSocketUrl"].(string)
 		if !ok || wsURL == "" {
@@ -92,6 +134,10 @@ func (s *Streamer) Start(ctx context.Context, dataChan chan<- []byte) error {
 		defer func() {
 			s.mu.Lock()
 			s.conn = nil
+			// Re-arm readiness: WaitReady callers block until the next
+			// connection completes login.
+			s.ready = make(chan struct{})
+			s.readyOnce = sync.Once{}
 			s.mu.Unlock()
 		}()
 
@@ -106,6 +152,11 @@ func (s *Streamer) Start(ctx context.Context, dataChan chan<- []byte) error {
 		}
 
 		s.reconnect.ResetBackoff()
+
+		// Signal readiness so concurrent senders can start writing requests.
+		s.mu.Lock()
+		s.readyOnce.Do(func() { close(s.ready) })
+		s.mu.Unlock()
 
 		// Run ping loop and read loop concurrently; whichever returns first
 		// tears down the connection for the other.
@@ -125,6 +176,34 @@ func (s *Streamer) Stop() {
 	if s.conn != nil {
 		s.conn.Close(websocket.StatusNormalClosure, "user requested stop")
 		s.conn = nil
+	}
+}
+
+// WaitReady blocks until the streamer's WebSocket connection is active and
+// logged in, or until the timeout/context elapses. It is safe to call
+// concurrently; the ready channel is re-created on every disconnect, and
+// WaitReady re-fetches the current channel so a waiter never waits a full
+// timeout on a channel that was replaced by a reconnect.
+func (s *Streamer) WaitReady(ctx context.Context, timeout time.Duration) error {
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	recheck := time.NewTicker(readyRecheckInterval)
+	defer recheck.Stop()
+
+	for {
+		s.mu.RLock()
+		ready := s.ready
+		s.mu.RUnlock()
+
+		select {
+		case <-ready:
+			return nil
+		case <-recheck.C:
+			continue // re-fetch: the channel may have been replaced by a reconnect
+		case <-waitCtx.Done():
+			return fmt.Errorf("streamer not ready: %w", waitCtx.Err())
+		}
 	}
 }
 
@@ -166,6 +245,15 @@ func (s *Streamer) readLoop(ctx context.Context, c *websocket.Conn, dataChan cha
 		case dataChan <- msg:
 		case <-ctx.Done():
 			return ctx.Err()
+		default:
+			// Channel full — drop the message rather than block the WebSocket
+			// read loop. Blocking would stall the WebSocket, causing the server
+			// to think the client is dead and disconnect us. Schwab sends
+			// incremental updates, so a dropped message is quickly superseded
+			// by the next update.
+			s.logger.Warn("stream data channel full, dropping message",
+				"size", len(msg),
+			)
 		}
 	}
 }
@@ -269,8 +357,34 @@ func (s *Streamer) record(service, command string, keys, fields []string) {
 	}
 }
 
-// send records the subscription and writes the request to the WebSocket.
-// It is the shared implementation used by every public service method.
+// invalidateCachedInfo drops the cached streamer connection metadata so the
+// next request fetches fresh session keys. Called at the start of each
+// reconnect cycle.
+func (s *Streamer) invalidateCachedInfo() {
+	s.infoMu.Lock()
+	s.cachedInfo = nil
+	s.infoMu.Unlock()
+}
+
+// storeCachedInfo caches the streamer connection metadata for the current
+// connection.
+func (s *Streamer) storeCachedInfo(info map[string]any) {
+	s.infoMu.Lock()
+	s.cachedInfo = info
+	s.infoMu.Unlock()
+}
+
+// getCachedInfo returns the cached streamer connection metadata, or nil if
+// no cache exists yet.
+func (s *Streamer) getCachedInfo() map[string]any {
+	s.infoMu.RLock()
+	defer s.infoMu.RUnlock()
+	return s.cachedInfo
+}
+
+// send records the subscription, waits for the streamer to be ready, and
+// writes the request to the WebSocket. It is the shared implementation used
+// by every public service method.
 func (s *Streamer) send(ctx context.Context, service, command string, keys, fields []string, extra map[string]any) error {
 	if len(keys) == 0 {
 		return fmt.Errorf("send %s/%s: keys must not be empty", service, command)
@@ -280,9 +394,24 @@ func (s *Streamer) send(ctx context.Context, service, command string, keys, fiel
 		s.record(service, command, keys, fields)
 	}
 
-	info, err := s.infoSrc()
-	if err != nil {
-		return fmt.Errorf("get streamer info: %w", err)
+	// Wait for the connection to be established and logged in. This
+	// eliminates the race where subscription requests arrive before the
+	// connection exists (initial startup or during a reconnection cycle).
+	if err := s.WaitReady(ctx, s.readyTimeout); err != nil {
+		return err
+	}
+
+	// Use cached streamer info instead of an HTTP roundtrip per request.
+	info := s.getCachedInfo()
+	if info == nil {
+		// Cache miss — fetch fresh. This only happens if send is called
+		// before Start's first info fetch completes.
+		var err error
+		info, err = s.infoSrc()
+		if err != nil {
+			return fmt.Errorf("get streamer info: %w", err)
+		}
+		s.storeCachedInfo(info)
 	}
 
 	params := map[string]any{
