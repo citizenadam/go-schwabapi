@@ -24,6 +24,13 @@ const (
 	// an error. Configurable via SetReadyTimeout.
 	DefaultReadyTimeout = 60 * time.Second
 
+	// loginResponseTimeout bounds how long Start waits for the server's
+	// LOGIN response before replaying subscriptions. The server closes the
+	// connection if an ADD arrives before LOGIN is processed ("STREAM
+	// CONNECTION NOT FOUND - Please login again."), so subscriptions must
+	// not be written until the LOGIN round-trip completes.
+	loginResponseTimeout = 10 * time.Second
+
 	// readyRecheckInterval is how often WaitReady re-fetches the current
 	// ready channel. The channel is replaced on every disconnect, so a
 	// waiter that captured a pre-reconnect channel must re-check to notice
@@ -143,6 +150,16 @@ func (s *Streamer) Start(ctx context.Context, dataChan chan<- []byte) error {
 
 		if err := s.login(innerCtx, info); err != nil {
 			c.Close(websocket.StatusInternalError, "login failed")
+			return fmt.Errorf("login: %w", err)
+		}
+
+		// Wait for the server's LOGIN response before replaying
+		// subscriptions. Schwab closes the connection if a subscription
+		// request arrives before LOGIN is processed ("STREAM CONNECTION NOT
+		// FOUND - Please login again."), which would otherwise put the
+		// reconnect loop into a permanent connect-close cycle.
+		if err := s.awaitLoginResponse(innerCtx, c); err != nil {
+			c.Close(websocket.StatusInternalError, "login rejected")
 			return fmt.Errorf("login: %w", err)
 		}
 
@@ -279,6 +296,44 @@ func (s *Streamer) login(ctx context.Context, info map[string]any) error {
 	s.mu.RUnlock()
 
 	return wsjson.Write(ctx, c, req)
+}
+
+// awaitLoginResponse reads messages until the ADMIN/LOGIN response arrives
+// and verifies it succeeded (code 0). Any other outcome — a non-zero code,
+// a read failure, or a timeout — is returned as an error so the caller can
+// fail loudly instead of proceeding with an unauthenticated connection.
+func (s *Streamer) awaitLoginResponse(ctx context.Context, c *websocket.Conn) error {
+	readCtx, cancel := context.WithTimeout(ctx, loginResponseTimeout)
+	defer cancel()
+
+	for {
+		var msg map[string]any
+		if err := wsjson.Read(readCtx, c, &msg); err != nil {
+			return fmt.Errorf("read login response: %w", err)
+		}
+
+		responses, _ := msg["response"].([]any)
+		for _, r := range responses {
+			resp, ok := r.(map[string]any)
+			if !ok {
+				continue
+			}
+			service, _ := resp["service"].(string)
+			command, _ := resp["command"].(string)
+			if !strings.EqualFold(service, "ADMIN") || !strings.EqualFold(command, "LOGIN") {
+				continue
+			}
+
+			content, _ := resp["content"].(map[string]any)
+			code, _ := content["code"].(float64)
+			if code != 0 {
+				msg, _ := content["msg"].(string)
+				return fmt.Errorf("login rejected: code %v %s", code, msg)
+			}
+			s.logger.Debug("stream login confirmed", "code", code)
+			return nil
+		}
+	}
 }
 
 func (s *Streamer) resubscribe(ctx context.Context, info map[string]any) error {

@@ -338,6 +338,64 @@ dataReceived:
 	}
 }
 
+// TestAwaitLoginResponse_Rejected verifies a non-zero LOGIN response code
+// fails loudly instead of proceeding with an unauthenticated connection.
+func TestAwaitLoginResponse_Rejected(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer c.Close(websocket.StatusNormalClosure, "test done")
+		var login map[string]any
+		if err := wsjson.Read(context.Background(), c, &login); err != nil {
+			return
+		}
+		_ = wsjson.Write(context.Background(), c, map[string]any{
+			"response": []any{map[string]any{
+				"service": "ADMIN", "command": "LOGIN",
+				"content": map[string]any{"code": 12, "msg": "invalid credentials"},
+			}},
+		})
+	}))
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	c, _, err := websocket.Dial(ctx, wsURL, nil)
+	if err != nil {
+		t.Fatalf("dial failed: %v", err)
+	}
+	defer c.Close(websocket.StatusNormalClosure, "done")
+
+	s := newTestStreamer()
+
+	// Send a LOGIN request so the server responds.
+	login := map[string]any{
+		"service": "ADMIN", "command": "LOGIN", "requestid": 1,
+		"SchwabClientCustomerId": "customer-id",
+		"SchwabClientCorrelId":   "correl-id",
+		"parameters": map[string]any{
+			"Authorization":          "test-token",
+			"SchwabClientChannel":    "N9",
+			"SchwabClientFunctionId": "APIAPP",
+		},
+	}
+	if err := wsjson.Write(ctx, c, login); err != nil {
+		t.Fatalf("write login failed: %v", err)
+	}
+
+	err = s.awaitLoginResponse(ctx, c)
+	if err == nil {
+		t.Fatal("awaitLoginResponse must error on a rejected login")
+	}
+	if !strings.Contains(err.Error(), "login rejected") {
+		t.Fatalf("error %q must mention the login rejection", err)
+	}
+}
+
 // TestStart_ReplaysRecordedSubscriptions verifies subscriptions recorded
 // before the connection is established are replayed after login.
 func TestStart_ReplaysRecordedSubscriptions(t *testing.T) {
