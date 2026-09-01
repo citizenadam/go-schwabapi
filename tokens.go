@@ -212,7 +212,11 @@ func (tm *TokenManager) loadFromStorage() error {
 		// No tokens stored yet — first run, nothing to load.
 		return nil
 	}
+	return tm.applyRecord(rec)
+}
 
+// applyRecord decrypts a TokenRecord and adopts it into in-memory state.
+func (tm *TokenManager) applyRecord(rec *TokenRecord) error {
 	decryptedAT, err := Decrypt(rec.AccessToken, tm.encryptionKey)
 	if err != nil {
 		return fmt.Errorf("decrypt access token: %w", err)
@@ -289,6 +293,45 @@ func (tm *TokenManager) saveTokens(atIssued, rtIssued time.Time, tokenDict map[s
 // ── Token refresh ─────────────────────────────────────────────────────────────
 
 func (tm *TokenManager) updateAccessToken() error {
+	// Serialize cross-process refresh. When the storage implements
+	// TokenStoreLocker, acquire the lock so concurrent processes sharing the
+	// same store do not consume the rotating refresh_token simultaneously
+	// (which would yield invalid_grant on the loser).
+	if locker, ok := tm.storage.(TokenStoreLocker); ok {
+		release, err := locker.AcquireRefreshLock(context.Background())
+		if err != nil {
+			return fmt.Errorf("acquire refresh lock: %w", err)
+		}
+		defer release()
+	}
+
+	// Re-load the store now that we hold the lock. A peer may have already
+	// rotated the token while we were waiting; if so, adopt it rather than
+	// sending a stale refresh_token to Schwab.
+	rec, err := tm.storage.Load(context.Background())
+	if err != nil {
+		return fmt.Errorf("load tokens: %w", err)
+	}
+	if rec != nil && rec.AccessToken != "" {
+		tm.mu.RLock()
+		cur := tm.accessToken
+		tm.mu.RUnlock()
+		if rec.AccessToken != cur {
+			if err := tm.applyRecord(rec); err != nil {
+				return err
+			}
+			// Adopt and skip the HTTP refresh if the peer's token is still
+			// comfortably fresh (outside the refresh threshold).
+			info := tm.TokenInfo()
+			if time.Now().Before(info.AccessTokenExpiry.Add(-AccessTokenRefreshThreshold)) {
+				if tm.logger != nil {
+					tm.logger.Debug("[Schwabdev] Adopted peer-refreshed token from storage; skipping HTTP refresh")
+				}
+				return nil
+			}
+		}
+	}
+
 	tm.mu.RLock()
 	rt := tm.refreshToken
 	// Preserve the original refresh-token acquisition anchor. Schwab refresh

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -295,7 +296,26 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 			return nil, fmt.Errorf("failed to read error response body: %w", readErr)
 		}
 
-		return nil, &SchwabAPIError{StatusCode: resp.StatusCode, Body: bodyBytes}
+		apiErr := &SchwabAPIError{
+			StatusCode: resp.StatusCode,
+			Body:       bodyBytes,
+			RequestID:  resp.Header.Get("schwab-client-correl-id"),
+		}
+		apiErr.Message, _ = parseErrorBody(bodyBytes)
+
+		// Parse Retry-After for 429 responses: an integer number of seconds,
+		// or an HTTP-date after which to retry.
+		if resp.StatusCode == http.StatusTooManyRequests {
+			if ra := resp.Header.Get("Retry-After"); ra != "" {
+				if secs, err := strconv.Atoi(ra); err == nil {
+					apiErr.RetryAfter = time.Duration(secs) * time.Second
+				} else if when, err := http.ParseTime(ra); err == nil {
+					apiErr.RetryAfter = max(time.Until(when), 0)
+				}
+			}
+		}
+
+		return nil, apiErr
 	}
 
 	if result != nil && resp.Body != nil {

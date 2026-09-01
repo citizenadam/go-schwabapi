@@ -44,15 +44,39 @@ type TokenStorage interface {
 	Close() error
 }
 
+// TokenStoreLocker is an optional interface a TokenStorage MAY implement to
+// coordinate refresh attempts across processes sharing the same underlying
+// store. When the store implements it, TokenManager acquires the lock before
+// refreshing so that concurrent processes do not consume a rotating
+// refresh_token simultaneously (which would cause invalid_grant on the loser).
+//
+// Stores that do not implement TokenStoreLocker still work — in-process
+// singleflight still dedups concurrent refreshes — but cross-process
+// coordination is simply skipped.
+type TokenStoreLocker interface {
+	// AcquireRefreshLock blocks until the lock is acquired or ctx is done.
+	// The returned release function is idempotent and safe to call from
+	// multiple goroutines. If ctx is cancelled before the lock is acquired,
+	// the context error is returned verbatim.
+	AcquireRefreshLock(ctx context.Context) (release func(), err error)
+}
+
 // ── File-based implementation (default, stdlib only) ─────────────────────────
 
 // FileTokenStorage stores tokens as a JSON file on disk.
 // It is the default implementation used when no custom storage is provided.
 // A per-instance mutex provides in-process safety; cross-process safety relies
-// on the atomic write pattern (write to temp file, then rename).
+// on the atomic write pattern (write to temp file, then rename) plus an
+// optional flock-based cross-process lock (see AcquireRefreshLock).
 type FileTokenStorage struct {
 	path string
 	mu   sync.Mutex
+
+	// lock coordinates cross-process refresh serialization. It embeds the
+	// flock implementation on Unix; on non-Unix builds the field is present
+	// but AcquireRefreshLock is a no-op returner, so multi-process
+	// coordination is skipped (singleflight still dedups in-process).
+	lock flockRefreshLock
 }
 
 // NewFileTokenStorage creates a FileTokenStorage at the given path.
@@ -64,7 +88,7 @@ func NewFileTokenStorage(path string) (*FileTokenStorage, error) {
 			return nil, fmt.Errorf("create storage directory: %w", err)
 		}
 	}
-	return &FileTokenStorage{path: path}, nil
+	return &FileTokenStorage{path: path, lock: *newFlockRefreshLock(path)}, nil
 }
 
 // Load reads and JSON-decodes the token file.
@@ -113,6 +137,13 @@ func (f *FileTokenStorage) Save(_ context.Context, rec TokenRecord) error {
 
 // Close is a no-op for file storage — no persistent connections to release.
 func (f *FileTokenStorage) Close() error { return nil }
+
+// AcquireRefreshLock implements TokenStoreLocker. On Unix it serializes
+// cross-process refreshes via a flock on a sibling "<path>.lock" file; on
+// other platforms it returns immediately (no cross-process coordination).
+func (f *FileTokenStorage) AcquireRefreshLock(ctx context.Context) (func(), error) {
+	return f.lock.AcquireRefreshLock(ctx)
+}
 
 // ── Path helper ───────────────────────────────────────────────────────────────
 
