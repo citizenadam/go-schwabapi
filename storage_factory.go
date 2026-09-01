@@ -94,7 +94,7 @@ func NewStorageFromConfig(cfg StorageConfig) (TokenStorage, error) {
 		}
 		storage, err := NewPostgresTokenStorage(db, table)
 		if err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, err
 		}
 		// Wrap so that storage.Close() also closes the *sql.DB we opened here.

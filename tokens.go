@@ -423,7 +423,9 @@ func (tm *TokenManager) getNewTokens() (string, error) {
 	} else {
 		fmt.Printf("[Schwabdev] Open to authenticate: %s\n", authURL)
 		fmt.Print("[Schwabdev] Paste the address bar URL here: ")
-		fmt.Scanln(&rawCallback)
+		if _, err := fmt.Scanln(&rawCallback); err != nil {
+			return "", fmt.Errorf("read callback URL from stdin: %w", err)
+		}
 	}
 
 	rawCallback = strings.TrimSpace(rawCallback)
@@ -463,7 +465,7 @@ func (tm *TokenManager) postOAuthToken(ctx context.Context, grantType, code stri
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // body fully read; close error not actionable
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

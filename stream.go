@@ -149,7 +149,7 @@ func (s *Streamer) Start(ctx context.Context, dataChan chan<- []byte) error {
 		}()
 
 		if err := s.login(innerCtx, info); err != nil {
-			c.Close(websocket.StatusInternalError, "login failed")
+			c.Close(websocket.StatusInternalError, "login failed") //nolint:errcheck // teardown; error not actionable
 			return fmt.Errorf("login: %w", err)
 		}
 
@@ -159,7 +159,7 @@ func (s *Streamer) Start(ctx context.Context, dataChan chan<- []byte) error {
 		// FOUND - Please login again."), which would otherwise put the
 		// reconnect loop into a permanent connect-close cycle.
 		if err := s.awaitLoginResponse(innerCtx, c); err != nil {
-			c.Close(websocket.StatusInternalError, "login rejected")
+			c.Close(websocket.StatusInternalError, "login rejected") //nolint:errcheck // teardown; error not actionable
 			return fmt.Errorf("login: %w", err)
 		}
 
@@ -191,7 +191,7 @@ func (s *Streamer) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.conn != nil {
-		s.conn.Close(websocket.StatusNormalClosure, "user requested stop")
+		s.conn.Close(websocket.StatusNormalClosure, "user requested stop") //nolint:errcheck // teardown; error not actionable
 		s.conn = nil
 	}
 }
@@ -241,7 +241,7 @@ func (s *Streamer) pingLoop(ctx context.Context, c *websocket.Conn) {
 			pingCtx, cancel := context.WithTimeout(ctx, pingTimeout)
 			if err := c.Ping(pingCtx); err != nil {
 				s.logger.Warn("ping failed, closing connection", "error", err)
-				c.Close(websocket.StatusGoingAway, "ping timeout")
+				c.Close(websocket.StatusGoingAway, "ping timeout") //nolint:errcheck // teardown; error not actionable
 				cancel()
 				return
 			}

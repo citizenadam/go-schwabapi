@@ -118,6 +118,10 @@ func (s *PostgresTokenStorage) Save(ctx context.Context, rec TokenRecord) error 
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
+	// Deferred rollback is a no-op after a successful Commit, and ensures the
+	// transaction is rolled back (not left dangling) if any step before Commit
+	// fails. Errors from Rollback itself are not actionable in this path.
+	defer tx.Rollback() //nolint:errcheck // rollback after failed tx; error not actionable
 
 	upsert := fmt.Sprintf(`
 		INSERT INTO %s
@@ -147,7 +151,6 @@ func (s *PostgresTokenStorage) Save(ctx context.Context, rec TokenRecord) error 
 		rec.Scope,
 	)
 	if err != nil {
-		tx.Rollback()
 		return fmt.Errorf("upsert tokens: %w", err)
 	}
 

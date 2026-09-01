@@ -129,7 +129,11 @@ func (f *FileTokenStorage) Save(_ context.Context, rec TokenRecord) error {
 		return fmt.Errorf("write temp token file: %w", err)
 	}
 	if err := os.Rename(tmp, f.path); err != nil {
-		os.Remove(tmp)
+		// Best-effort cleanup of the temp file; report the original rename
+		// error as primary, but surface the cleanup failure if it happens.
+		if rmErr := os.Remove(tmp); rmErr != nil && !os.IsNotExist(rmErr) {
+			return fmt.Errorf("commit token file: %w (also failed to clean up temp file: %v)", err, rmErr)
+		}
 		return fmt.Errorf("commit token file: %w", err)
 	}
 	return nil

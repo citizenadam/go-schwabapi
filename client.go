@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -272,7 +271,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized && !isRetry {
-		resp.Body.Close()
+		resp.Body.Close() //nolint:errcheck // body closed before retry; error not actionable
 
 		if c.logger != nil {
 			c.logger.Debug("Received 401 Unauthorized, forcing token refresh and retrying")
@@ -289,7 +288,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 	// errors carrying the status code and body so callers can classify
 	// failures (4xx, 429 rate-limit, 401 auth) without string-matching.
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck // body fully read; close error not actionable
 
 		bodyBytes, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
@@ -302,24 +301,15 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 			RequestID:  resp.Header.Get("schwab-client-correl-id"),
 		}
 		apiErr.Message, _ = parseErrorBody(bodyBytes)
-
-		// Parse Retry-After for 429 responses: an integer number of seconds,
-		// or an HTTP-date after which to retry.
 		if resp.StatusCode == http.StatusTooManyRequests {
-			if ra := resp.Header.Get("Retry-After"); ra != "" {
-				if secs, err := strconv.Atoi(ra); err == nil {
-					apiErr.RetryAfter = time.Duration(secs) * time.Second
-				} else if when, err := http.ParseTime(ra); err == nil {
-					apiErr.RetryAfter = max(time.Until(when), 0)
-				}
-			}
+			apiErr.RetryAfter = parseRetryAfter(resp.Header.Get("Retry-After"))
 		}
 
 		return nil, apiErr
 	}
 
 	if result != nil && resp.Body != nil {
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck // body fully read; close error not actionable
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {

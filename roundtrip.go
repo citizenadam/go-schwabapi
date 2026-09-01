@@ -203,7 +203,7 @@ func (s *SchwabRoundTripper) refreshOAuth(ctx context.Context, refreshToken stri
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // body fully read; close error not actionable
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

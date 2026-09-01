@@ -229,7 +229,7 @@ func wsTestServer(t *testing.T, sendData bool) (*httptest.Server, string, <-chan
 		if err != nil {
 			return
 		}
-		defer c.Close(websocket.StatusNormalClosure, "test done")
+		defer c.Close(websocket.StatusNormalClosure, "test done") //nolint:errcheck // test teardown
 
 		// Read the LOGIN request.
 		var login map[string]any
@@ -346,7 +346,7 @@ func TestAwaitLoginResponse_Rejected(t *testing.T) {
 		if err != nil {
 			return
 		}
-		defer c.Close(websocket.StatusNormalClosure, "test done")
+		defer c.Close(websocket.StatusNormalClosure, "test done") //nolint:errcheck // test teardown
 		var login map[string]any
 		if err := wsjson.Read(context.Background(), c, &login); err != nil {
 			return
@@ -368,7 +368,7 @@ func TestAwaitLoginResponse_Rejected(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial failed: %v", err)
 	}
-	defer c.Close(websocket.StatusNormalClosure, "done")
+	defer c.Close(websocket.StatusNormalClosure, "done") //nolint:errcheck // test teardown
 
 	s := newTestStreamer()
 

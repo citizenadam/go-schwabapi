@@ -38,7 +38,7 @@ func TestNextWakeup_TokensFarFromExpiry(t *testing.T) {
 	// Access token expires in 30 min, refresh threshold is 61s,
 	// so wakeup should be ~28.5 min, but clamped to at least TokenCheckerSleep (30s).
 	atWakeup := time.Now().Add(30 * time.Minute).Add(-AccessTokenRefreshThreshold)
-	expected := atWakeup.Sub(time.Now())
+	expected := time.Until(atWakeup)
 	if sleep < TokenCheckerSleep {
 		t.Errorf("nextWakeup should be at least TokenCheckerSleep (%v), got %v", TokenCheckerSleep, sleep)
 	}

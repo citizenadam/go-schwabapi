@@ -1066,7 +1066,9 @@ func TestOrderRequest_OmitsEmptyOptionals(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 	var m map[string]any
-	json.Unmarshal(b, &m)
+	if err := json.Unmarshal(b, &m); err != nil {
+		t.Fatalf("unmarshal marshaled output: %v", err)
+	}
 	if _, present := m["stopPrice"]; present {
 		t.Error("stopPrice should be omitted when empty")
 	}

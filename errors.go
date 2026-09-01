@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -12,58 +13,58 @@ import (
 // Parameter validation errors
 var (
 	// ErrAppKeyRequired indicates that app_key parameter is missing
-	ErrAppKeyRequired = errors.New("[Schwabdev] app_key cannot be None.")
+	ErrAppKeyRequired = errors.New("app_key cannot be empty")
 
 	// ErrAppSecretRequired indicates that app_secret parameter is missing
-	ErrAppSecretRequired = errors.New("[Schwabdev] app_secret cannot be None.")
+	ErrAppSecretRequired = errors.New("app_secret cannot be empty")
 
 	// ErrCallbackURLRequired indicates that callback_url parameter is missing
-	ErrCallbackURLRequired = errors.New("[Schwabdev] callback_url cannot be None.")
+	ErrCallbackURLRequired = errors.New("callback_url cannot be empty")
 
 	// ErrTokensDBRequired indicates that tokens_db parameter is missing
-	ErrTokensDBRequired = errors.New("[Schwabdev] tokens_db cannot be None.")
+	ErrTokensDBRequired = errors.New("tokens_db cannot be empty")
 
 	// ErrInvalidKeyLength indicates app_key or app_secret has invalid length
-	ErrInvalidKeyLength = errors.New("[Schwabdev] App key or app secret invalid length.")
+	ErrInvalidKeyLength = errors.New("app key or app secret has invalid length")
 
 	// ErrCallbackNotHTTPS indicates callback_url is not using HTTPS protocol
-	ErrCallbackNotHTTPS = errors.New("[Schwabdev] callback_url must be https.")
+	ErrCallbackNotHTTPS = errors.New("callback_url must use https")
 
 	// ErrCallbackEndsWithSlash indicates callback_url is a path ending with /
-	ErrCallbackEndsWithSlash = errors.New("[Schwabdev] callback_url cannot be path (ends with \"/\").")
+	ErrCallbackEndsWithSlash = errors.New("callback_url cannot be a path ending with \"/\"")
 
 	// ErrTokensDBEndsWithSlash indicates tokens_db path ends with /
-	ErrTokensDBEndsWithSlash = errors.New("[Schwabdev] Tokens file cannot be path.")
+	ErrTokensDBEndsWithSlash = errors.New("tokens file cannot be a path")
 
 	// ErrAuthCallbackNotFunc indicates call_on_notify is not a callable function
-	ErrAuthCallbackNotFunc = errors.New("[Schwabdev] call_on_notify must be a callable function.")
+	ErrAuthCallbackNotFunc = errors.New("call_on_notify must be a callable function")
 )
 
 // Encryption and token errors
 var (
 	// ErrEncryptionFailed indicates token encryption failed
-	ErrEncryptionFailed = errors.New("Failed to encrypt token data.")
+	ErrEncryptionFailed = errors.New("failed to encrypt token data")
 
 	// ErrDecryptionFailed indicates token cannot be decrypted without encryption key
-	ErrDecryptionFailed = errors.New("Cannot decrypt token, no encryption key provided.")
+	ErrDecryptionFailed = errors.New("cannot decrypt token: no encryption key provided")
 
 	// ErrInvalidGrantType indicates an invalid OAuth grant type was specified
-	ErrInvalidGrantType = errors.New("Invalid grant type; options are 'authorization_code' or 'refresh_token'")
+	ErrInvalidGrantType = errors.New("invalid grant type; options are 'authorization_code' or 'refresh_token'")
 )
 
 // Client configuration errors
 var (
 	// ErrInvalidTimeout indicates timeout value is invalid
-	ErrInvalidTimeout = errors.New("Timeout must be greater than 0 and is recommended to be 5 seconds or more.")
+	ErrInvalidTimeout = errors.New("timeout must be greater than 0 and is recommended to be 5 seconds or more")
 
 	// ErrUnsupportedTimeFormat indicates an unsupported time format was specified
-	ErrUnsupportedTimeFormat = errors.New("Unsupported time format")
+	ErrUnsupportedTimeFormat = errors.New("unsupported time format")
 )
 
 // Streaming errors
 var (
 	// ErrStreamerUnavailable indicates streamer information is not available
-	ErrStreamerUnavailable = errors.New("Streamer info unavailable")
+	ErrStreamerUnavailable = errors.New("streamer info unavailable")
 )
 
 // HTTP status-class sentinel errors. These are returned unwrapped nowhere on
@@ -139,6 +140,22 @@ func (e *SchwabAPIError) Is(target error) bool {
 	default:
 		return false
 	}
+}
+
+// parseRetryAfter parses a Retry-After header value into a duration. It accepts
+// an integer number of seconds or an HTTP-date after which to retry, clamping
+// to >= 0. Returns 0 when the header is absent or unparseable.
+func parseRetryAfter(value string) time.Duration {
+	if value == "" {
+		return 0
+	}
+	if secs, err := strconv.Atoi(value); err == nil {
+		return time.Duration(secs) * time.Second
+	}
+	if when, err := http.ParseTime(value); err == nil {
+		return max(time.Until(when), 0)
+	}
+	return 0
 }
 
 // parseErrorBody extracts a human-readable message (and optional code) from a
