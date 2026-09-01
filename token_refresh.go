@@ -80,9 +80,6 @@ func nextWakeup(tm *TokenManager) time.Duration {
 		wakeAt = rtWakeup
 	}
 
-	sleep := wakeAt.Sub(now)
-	if sleep < TokenCheckerSleep {
-		sleep = TokenCheckerSleep
-	}
+	sleep := max(wakeAt.Sub(now), TokenCheckerSleep)
 	return sleep
 }

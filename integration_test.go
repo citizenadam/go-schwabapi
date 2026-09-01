@@ -89,9 +89,6 @@ func assertValidJSON(t *testing.T, label string, v any) {
 	}
 }
 
-// ptr returns a pointer to v. Convenience for optional API params.
-func ptr[T any](v T) *T { return &v }
-
 // ── Account tests ─────────────────────────────────────────────────────────────
 
 func TestIntegration_LinkedAccounts(t *testing.T) {
