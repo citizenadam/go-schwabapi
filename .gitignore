@@ -71,6 +71,8 @@ __debug_bin
 PROPOSAL.md
 SPEC.md
 TODO.md
+scorecard.png
 
 # Config and Specs directory
 openspec/
+.desloppify/
