@@ -619,13 +619,13 @@ func TestIntegration_Movers(t *testing.T) {
 		t.Fatal("response is nil")
 	}
 	// Movers can be empty outside market hours — just verify the struct.
-	for i, m := range *resp {
+	for i, m := range resp.Screeners {
 		if m.Symbol == "" {
 			t.Errorf("mover[%d]: Symbol is empty", i)
 		}
 	}
 	assertValidJSON(t, "MoversResponse", resp)
-	t.Logf("Movers $SPX: %d mover(s)", len(*resp))
+	t.Logf("Movers $SPX: %d mover(s)", len(resp.Screeners))
 }
 
 func TestIntegration_MarketHours_Single(t *testing.T) {

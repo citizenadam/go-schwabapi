@@ -896,7 +896,6 @@ type OptionContract struct {
 	Mini                   bool                 `json:"mini"`
 }
 
-
 // OptionDeliverable represents option deliverable information.
 type OptionDeliverable struct {
 	Symbol           string  `json:"symbol,omitempty"`
@@ -942,20 +941,29 @@ type Candle struct {
 	Volume          int64   `json:"volume,omitempty"`
 }
 
-// MoversResponse is the response for GET /marketdata/v1/movers/{symbol}
-type MoversResponse []Mover
+// MoversResponse is the response for GET /marketdata/v1/movers/{symbol}.
+// The live API wraps the mover list in an object under the "screeners" key
+// (confirmed against the production endpoint 2026-09-02):
+//
+//	{"screeners": [{"description": ..., "lastPrice": ..., ...}]}
+type MoversResponse struct {
+	Screeners []Mover `json:"screeners"`
+}
 
 // Mover represents a market mover.
 // Fields follow the live API response shape: the movers endpoint returns
-// lastPrice/netChange/netPercentChange/volume/totalVolume per mover.
+// lastPrice/netChange/netPercentChange/volume/totalVolume/marketShare/trades
+// per mover.
 type Mover struct {
 	Symbol           string  `json:"symbol,omitempty"`
 	Description      string  `json:"description,omitempty"`
 	LastPrice        float64 `json:"lastPrice,omitempty"`
 	NetChange        float64 `json:"netChange,omitempty"`
 	NetPercentChange float64 `json:"netPercentChange,omitempty"`
+	MarketShare      float64 `json:"marketShare,omitempty"`
 	Volume           int64   `json:"volume,omitempty"`
 	TotalVolume      int64   `json:"totalVolume,omitempty"`
+	Trades           int64   `json:"trades,omitempty"`
 	Change           float64 `json:"change,omitempty"`
 	Direction        string  `json:"direction,omitempty"`
 }

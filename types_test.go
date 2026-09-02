@@ -541,10 +541,10 @@ func TestOptionChainsResponse_RoundTrip(t *testing.T) {
 						PutCall:          "CALL",
 						Symbol:           "SPY   240119C00450000",
 						Description:      "SPY Jan 19 2024 450 Call",
-						Bid:               3.50,
-						Ask:               3.55,
-						Last:              3.52,
-						Mark:              3.525,
+						Bid:              3.50,
+						Ask:              3.55,
+						Last:             3.52,
+						Mark:             3.525,
 						Delta:            0.52,
 						Gamma:            0.03,
 						Theta:            -0.15,
@@ -751,18 +751,20 @@ func TestPriceHistoryResponse_PreviousCloseDateInt64(t *testing.T) {
 
 func TestMoversResponse_RoundTrip(t *testing.T) {
 	input := schwabdev.MoversResponse{
-		{Symbol: "NVDA", Description: "NVIDIA Corp", LastPrice: 650.00, Change: 25.50, TotalVolume: 45000000},
-		{Symbol: "AMD", Description: "Adv Micro Devices", LastPrice: 180.00, Change: -3.20, TotalVolume: 30000000},
+		Screeners: []schwabdev.Mover{
+			{Symbol: "NVDA", Description: "NVIDIA Corp", LastPrice: 650.00, Change: 25.50, TotalVolume: 45000000},
+			{Symbol: "AMD", Description: "Adv Micro Devices", LastPrice: 180.00, Change: -3.20, TotalVolume: 30000000},
+		},
 	}
 	got := roundtrip(t, input)
-	if len(got) != 2 {
-		t.Fatalf("want 2 movers, got %d", len(got))
+	if len(got.Screeners) != 2 {
+		t.Fatalf("want 2 movers, got %d", len(got.Screeners))
 	}
-	if got[0].Change != 25.50 {
-		t.Errorf("Change: want 25.50, got %f", got[0].Change)
+	if got.Screeners[0].Change != 25.50 {
+		t.Errorf("Change: want 25.50, got %f", got.Screeners[0].Change)
 	}
-	if got[1].TotalVolume != 30000000 {
-		t.Errorf("TotalVolume: want 30000000, got %d", got[1].TotalVolume)
+	if got.Screeners[1].TotalVolume != 30000000 {
+		t.Errorf("TotalVolume: want 30000000, got %d", got.Screeners[1].TotalVolume)
 	}
 }
 
